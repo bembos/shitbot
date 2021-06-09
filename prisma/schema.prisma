@@ -1,0 +1,84 @@
+datasource db {
+  provider = "nysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id       Int      @default(autoincrement()) @id
+  email    String   @unique
+  userName String?
+  posts    Post[]
+  profile  Profile?
+}
+
+model TokenType {
+  id          Int     @default(autoincrement())
+  abbrevation String
+  address     String
+}
+
+model BuyOrderStatus {
+  id    Int     @default(autoincrement()) @id
+  label String
+}
+
+model BuyOrder {
+  id              Int             @default(autoincrement())
+  token           String
+  amountGiven     Float
+  autoMultiplier? Float
+  createdAt       DateTime        @default(now())
+  completedAt?    DateTime
+  user            User            @relation(fields: [userId], references: [id])
+  userId          Int             @unique
+  tokenType       TokenType       @relation(fields: [tokenTypeId], references: [id])
+  tokenTypeId     Int             @unique
+  buyOrderStatus  BuyOrderStatus  @relation(fields: [tokenTypeId], references: [id])
+  buyOrderStatus  Int             @unique
+}
+
+model Bot {
+  id             Int      @default(autoincrement()) @id
+  enabled        Boolean
+  autoMultiplier float
+  maxTransaction Int
+  maxTime        float
+  user           User     @relation(fields: [userId], references: [id])
+  userId         Int      @unique
+}
+
+model TradeWindow {
+  id             Int
+  tokenAddress   String
+  tokenName      Float
+  bot            Bot      @relation(fields: [botId], references: [id])
+  botId          Int      @unique
+}
+
+model TransactionStatus {
+  id    Int     @default(autoincrement()) @id
+  label String
+}
+
+model LogMessage {
+  id            Int         @default(autoincrement()) @id
+  content       Text
+  createdAt     DateTime    @default(now())
+  tradeWindow   TradeWindow @relation(fields: [tradeWindowId], references: [id])
+  tradeWindowId Int         @unique
+}
+
+model Transaction {
+  id              Int
+  tokenGiven?     String
+  givenAmount?    Float
+  tokenReceived?  String
+  receivedAmount? Float
+  tradeWindow     TradeWindow @relation(fields: [tradeWindowId], references: [id])
+  tradeWindowId   Int         @unique
+}
+
