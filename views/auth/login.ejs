@@ -1,0 +1,31 @@
+<section class="basic-inputs">
+    <div class="row match-height">
+        <div class="col-xl-4 col-lg-6 col-md-12">
+        </div>
+        <div class="col-xl-4 col-lg-6 col-md-12">
+            <%- include ('../layout/partials/messages') %>
+            <form action="/login" method="POST">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">Login</h4>
+                    </div>
+                    <div class="card-block">
+                        <div class="card-body">
+                            <fieldset class="form-group">
+                                <label for="emailField">Email</label>
+                                <input type="email" name="email" class="form-control" id="emailField">
+                            </fieldset>
+                            <fieldset class="form-group">
+                                <label for="passwordField">Password</label>
+                                <input type="password" name="password" class="form-control" id="passwordField">
+                            </fieldset>
+                            <button class="btn btn-primary btn-min-width mr-1 mb-1" type="submit">Login</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="col-xl-4 col-lg-6 col-md-12">
+        </div>
+    </div>
+  </section>

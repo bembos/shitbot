@@ -1,5 +1,5 @@
 datasource db {
-  provider = "nysql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -8,77 +8,171 @@ generator client {
 }
 
 model User {
-  id       Int      @default(autoincrement()) @id
-  email    String   @unique
-  userName String?
-  posts    Post[]
-  profile  Profile?
+  id                   Int                         @id @default(autoincrement())
+  email                String                      @unique
+  password             String
+  username             String?
+  bot                  Bot?
+  buyOrders            BuyOrder[]                
+  liqPoolConfs         LiquidityPoolConfiguration?
+  contractStatusConfs  ContractStatusConfiguration?
+  contractContentConfs UserContractContentConf[]
 }
 
-model TokenType {
-  id          Int     @default(autoincrement())
+model Blockchain {
+  id          Int        @id @default(autoincrement())
+  label       String  
   abbrevation String
-  address     String
+  buyOrders   BuyOrder[]
+  bots        Bot[]
+
+  @@map(name: "blockchains")
 }
 
 model BuyOrderStatus {
-  id    Int     @default(autoincrement()) @id
+  id    Int     @id @default(autoincrement())
   label String
+  buyOrders     BuyOrder[]
+
+  @@map(name: "buy_order_statuses")
 }
 
 model BuyOrder {
-  id              Int             @default(autoincrement())
-  token           String
-  amountGiven     Float
-  autoMultiplier? Float
-  createdAt       DateTime        @default(now())
-  completedAt?    DateTime
-  user            User            @relation(fields: [userId], references: [id])
-  userId          Int             @unique
-  tokenType       TokenType       @relation(fields: [tokenTypeId], references: [id])
-  tokenTypeId     Int             @unique
-  buyOrderStatus  BuyOrderStatus  @relation(fields: [tokenTypeId], references: [id])
-  buyOrderStatus  Int             @unique
+  id                Int             @id @default(autoincrement())
+  address           String
+  amountGiven       Float           @map(name: "amount_given")
+  autoMultiplier    Float?          @map(name: "auto_multiplier")
+  createdAt         DateTime        @default(now()) @map(name: "created_at")
+  completedAt       DateTime?       @map(name: "completed_at")
+  user              User            @relation(fields: [userId], references: [id])
+  userId            Int             @unique @map(name: "user_id")
+  blockchain        Blockchain      @relation(fields: [blockchainId], references: [id])
+  blockchainId      Int             @unique @map(name: "blockchain_id")
+  buyOrderStatus    BuyOrderStatus  @relation(fields: [buyOrderStatusId], references: [id])
+  buyOrderStatusId  Int             @unique @map(name: "buy_order_status_id")
+
+  @@map(name: "buy_orders")
 }
 
 model Bot {
-  id             Int      @default(autoincrement()) @id
+  id             Int             @id @default(autoincrement())
   enabled        Boolean
-  autoMultiplier float
-  maxTransaction Int
-  maxTime        float
-  user           User     @relation(fields: [userId], references: [id])
-  userId         Int      @unique
+  autoMultiplier Float           @map(name: "auto_multiplier")
+  maxTransaction Int             @map(name: "max_transaction")
+  maxTime        Float           @map(name: "max_time")
+  wallet         String
+  user           User            @relation(fields: [userId], references: [id])
+  userId         Int             @map(name: "user_id")
+  blockchain     Blockchain      @relation(fields: [blockchainId], references: [id])
+  blockchainId   Int             @unique @map(name: "blockchain_id")
+  tradeWindows   TradeWindow[]   
+
+  @@map(name: "bots") 
 }
 
 model TradeWindow {
-  id             Int
-  tokenAddress   String
-  tokenName      Float
+  id             Int      @id @default(autoincrement())
+  tokenAddress   String   @map(name: "token_address")
+  tokenName      Float    @map(name: "token_name")
   bot            Bot      @relation(fields: [botId], references: [id])
-  botId          Int      @unique
+  botId          Int      @unique @map(name: "bot_id")
+  logMessages    LogMessage[]
+  transactions   Transaction[]
+
+  @@map(name: "trade_windows")
 }
 
 model TransactionStatus {
   id    Int     @default(autoincrement()) @id
   label String
+
+  @@map(name: "transaction_statuses")
 }
 
 model LogMessage {
-  id            Int         @default(autoincrement()) @id
-  content       Text
-  createdAt     DateTime    @default(now())
-  tradeWindow   TradeWindow @relation(fields: [tradeWindowId], references: [id])
-  tradeWindowId Int         @unique
+  id            Int         @id @default(autoincrement())
+  content       String
+  createdAt     DateTime    @default(now()) @map(name: "created_at")
+  tradeWindow   TradeWindow @relation(fields: [tradeWindowId], references: [id]) 
+  tradeWindowId Int         @unique @map(name: "trade_window_id")
+
+  @@map(name: "log_messages")
 }
 
 model Transaction {
-  id              Int
-  tokenGiven?     String
-  givenAmount?    Float
-  tokenReceived?  String
-  receivedAmount? Float
+  id              Int         @id @default(autoincrement())
+  tokenGiven      String?     @map(name: "token_given")
+  givenAmount     Float?      @map(name: "given_amount")
+  tokenReceived   String?     @map(name: "token_received")
+  receivedAmount  Float?      @map(name: "received_amount")
   tradeWindow     TradeWindow @relation(fields: [tradeWindowId], references: [id])
-  tradeWindowId   Int         @unique
+  tradeWindowId   Int         @unique  @map(name: "trade_window_id")
+
+  @@map(name: "transactions")
 }
 
+model RuleType {
+  id                           Int    @id  @default(autoincrement())
+  label                        String @unique
+  liquidityPoolConfiguration   LiquidityPoolConfiguration[]
+  contractStatusConfiguration  ContractStatusConfiguration[]
+  contractContentRules         ContractContentRule[]
+
+  @@map(name: "rule_types")
+}
+
+model LiquidityPoolConfiguration {
+  id         Int               @id  @default(autoincrement())
+  label      String            @unique
+  desc       String
+  marketCap  Boolean           @map(name: "market_cap")
+  maxCap     BigInt            @map(name: "max_cap")
+  minCap     BigInt            @map(name: "min_cap")
+  liqudity   Boolean           @map(name: "liquidity")
+  maxLiq     BigInt            @map(name: "max_liq")
+  minLiq     BigInt            @map(name: "min_liq")
+  user       User              @relation(fields: [userId], references: [id])
+  userId     Int               @map(name: "user_id")
+  ruleType   RuleType          @relation(fields: [ruleTypeId], references: [id])
+  ruleTypeId Int               @unique @map(name: "rule_type_id")
+
+  @@map(name: "liquidity_pool_configurations")
+}
+
+model ContractStatusConfiguration {
+  id             Int            @id @default(autoincrement())
+  label          String         @unique
+  desc           String
+  ownerRenounced Boolean        @map(name: "owner_renounced")
+  user           User           @relation(fields: [userId], references: [id])
+  userId         Int            @map(name: "user_id")
+  ruleType       RuleType       @relation(fields: [ruleTypeId], references: [id])
+  ruleTypeId     Int            @unique @map(name: "rule_type_id")
+
+  @@map(name: "contract_status_configurations")
+}
+
+model ContractContentRule {
+  id         Int                        @id  @default(autoincrement())
+  label      String @unique
+  desc       String
+  ruleType   RuleType                   @relation(fields: [ruleTypeId], references: [id])
+  ruleTypeId Int                        @unique @map(name: "rule_type_id")
+  userConfs  UserContractContentConf[]
+
+  @@map(name: "contract_content_rules")
+}
+
+model UserContractContentConf {
+  id                     Int                  @id @default(autoincrement())
+  label                  String
+  sourceCode             String               @db.LongText @map(name: "source_code")
+  avoid                  Boolean
+  enabled                Boolean
+  contractContentRule    ContractContentRule  @relation(fields: [contractContentRuleId], references: [id])
+  contractContentRuleId  Int                  @unique @map(name: "contract_content_rule_id")
+  user                   User                 @relation(fields: [userId], references: [id])
+  userId                 Int                  @unique @map(name: "user_id")
+
+  @@map(name: "user_contract_content_confs")
+}
