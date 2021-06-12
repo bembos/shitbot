@@ -14,7 +14,7 @@ const authValidation = require('../validators/auth');
 //Auth routes
 router.get('/login', guest, authController.getLogin);
 router.post('/login', guest, authValidation.login, authController.postLogin);
-router.post('/login', auth, authController.postLogout);
+router.post('/logout', auth, authController.postLogout);
 
 //Bot routes
 router.get('/bot', auth, botController.getIndex);

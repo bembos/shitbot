@@ -2,12 +2,9 @@ var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
-var logger = require('morgan');
 
 //Set up the app
 var app = express();
-
-
 
 //Express 
 let ejs = require('ejs');
@@ -26,7 +23,6 @@ var options = {
 	database: 'shitbot'
 };
 var sessionStore = new MySQLStore(options);
-
 app.use(session({ secret : 'secret', resave : true, saveUninitialized : true , store: sessionStore}));
 
 //Passport authentication
@@ -53,7 +49,6 @@ app.set('view engine', 'ejs');
 app.use(expressLayouts);
 app.set('layout', './layout/layout.ejs')
 
-app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());

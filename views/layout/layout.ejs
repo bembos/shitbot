@@ -7,14 +7,14 @@
     
     <% if (auth) { %>
 
-        <%- include('./header.ejs') %>
+        <%- include('./navigation.ejs') %>
 
         <%- include('./sidebar.ejs') %>
 
     <% } %>
 
         <%- body %>
-
+        
     <% if (auth) { %>
 
         <%- include('./footer.ejs') %>

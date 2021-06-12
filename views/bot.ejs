@@ -1,15 +1,61 @@
-
-    <!-- ////////////////////////////////////////////////////////////////////////////-->
-
-    <div class="app-content content">
-      <div class="content-wrapper"> 
-        <div class="content-wrapper-before"></div>
-        <div class="content-header row">
-          <div class="content-header-left col-md-4 col-12 mb-2">
-            <h3 class="content-header-title">Bot - Home Page</h3>
+<div class="app-content content">
+  <div class="content-wrapper">
+    <div class="content-body"><!-- Basic Inputs start -->
+      <section class="textarea-select">
+      <!-- Textarea start -->
+        <div class="row">
+          <div class="col-12 mt-3 mb-1">
+              <h4 class="text-uppercase">Bot Configuration</h4>
+              <p>Since you are giving your private key, tt is recommended that you use a dummy wallet account. </p>
           </div>
-    
         </div>
-      </div>
+        <div class="row match-height">
+          <div class="col-lg-3 col-md-12">
+              <div class="card">
+                  <div class="card-header">
+                      <h4 class="card-title">Bot Startup / Shutdown</h4>
+                  </div>
+                  <div class="card-block">
+                      <div class="card-body">
+                          <p class="card-subtitle">Bot is currently offline</p>
+                          <form action="/bot/start-up" method="POST">
+                            <button type="submit" class="btn mr-1 mb-1 btn-success btn-lg">Start</button>
+                          </form>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          <div class="col-lg-9 col-md-12">
+              <div class="card">
+                  <div class="card-header">
+                      <h4 class="card-title">Bot Configuration data</h4>
+                  </div>
+                  <div class="card-block">
+                      <div class="card-body">
+                        <div class="card-body">
+                          <h5 class="mt-2"></h5>
+                          <fieldset class="form-group">
+                              <textarea class="form-control" id="basicTextarea" rows="3"></textarea>
+                          </fieldset>
+    
+                          <h5 class="mt-2">Textarea with Placeholder</h5>
+                          <fieldset class="form-group">
+                              <textarea class="form-control" id="placeTextarea" rows="3" placeholder="Simple Textarea"></textarea>
+                          </fieldset>
+    
+                          <h5 class="mt-2">Textarea with Description</h5>
+                          <fieldset class="form-group">
+                              <p class="text-muted">Textarea description text.</p>
+                              <textarea class="form-control" id="descTextarea" rows="3" placeholder="Textarea with description"></textarea>
+                          </fieldset>
+                        </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+        </div>
+      <!-- Textarea end -->
+      </section>
     </div>
-    <!-- ////////////////////////////////////////////////////////////////////////////-->
+  </div>
+</div>
