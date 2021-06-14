@@ -41,6 +41,11 @@ app.use((req,res,next)=> {
     next();
 })
 
+//Method override
+const overrideHelper = require('./helpers/methodOverride'); 
+const methodOverride = require('method-override')
+app.use(methodOverride(overrideHelper.methodInBody))
+
 //Routes
 var indexRouter = require('./routes/index');
 

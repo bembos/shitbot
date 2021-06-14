@@ -1,0 +1,75 @@
+<div class="app-content content">
+    <div class="content-wrapper">
+        <div class="content-wrapper-before"></div>
+        <div class="content-header row">
+            <div class="content-header-left col-md-4 col-12 mb-2">
+                <h3 class="content-header-title">Bot Constraints Configuration</h3>
+            </div>
+        </div>
+        <div class="content-body">
+            <section class="basic-inputs">
+                <div class="row match-height">
+                    <div class="col-xl-6 col-lg-6 col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">General Constraints</h4>
+                            </div>
+                            <div class="card-block">
+                                <div class="card-body">
+                                    <form action="constraints/general/<% general.id %>" method="POST">
+
+                                        <h5 class="mt-2">Owner Renounced</h5>
+                                        <fieldset class="form-group">
+                                        <input type="checkbox" class="form-control" name="ownerRenounced" <% if (general.ownerRenounced) { %> checked <% } %>>
+                                        </fieldset>
+
+                                        <h5 class="mt-2">Use Market Cap</h5>
+                                        <fieldset class="form-group">
+                                        <input type="checkbox" class="form-control" name="marketCap" <% if (general.marketCap) { %> checked <% } %> >
+                                        </fieldset>
+                
+                                        <h5 class="mt-2">Market Cap Range</h5>
+                                        <fieldset class="form-group">
+                                            <label for="minMarket">Min:</label>
+                                            <input type="number" class="form-control" id="minMarket" name="maxCap" value="<%= general.maxCap %>">
+                                            <label for="maxMarket">Max:</label>
+                                            <input type="number" class="form-control" id="maxMarket"name="minCap" value="<%= general.minCap %>">
+                                        </fieldset>
+
+                                        <h5 class="mt-2">Use Liquidity</h5>
+                                        <fieldset class="form-group">
+                                        <input type="checkbox" class="form-control" name="liquidity" <% if (general.liquidity) { %> checked <% } %> >
+                                        </fieldset>
+                
+                                        <h5 class="mt-2">Liquidity Range</h5>
+                                        <fieldset class="form-group">
+                                            <label for="minLiquidity">Min:</label>
+                                            <input type="number" class="form-control" id="minLiquidity" name="maxLiq" value="<%= bot.maxLiq %>">
+                                            <label for="maxLiquidity">Max:</label>
+                                            <input type="number" class="form-control" id="maxLiquidity"name="minLiq" value="<%= bot.minLiq %>">
+                                        </fieldset>
+
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-6 col-lg-6 col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">Contract Code Constraints</h4>
+                            </div>
+                            <div class="card-block">
+                                <div class="card-body">
+                                    <form action="constraints/contract-code/" method="GET">
+                                        <button type="button" class="btn mr-1 mb-1 btn-success">Go to Configuration</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>

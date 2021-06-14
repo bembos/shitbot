@@ -1,0 +1,79 @@
+const { PrismaClient } = require('@prisma/client')
+const prisma = new PrismaClient()
+
+/**
+ * Retrieves the user's bot
+ * @param {User} user 
+ * @returns 
+ */
+exports.retrieveUserWithGeneralConstraints = (user) => {
+    return prisma.user.findUnique({
+        where : {
+            id: user.id
+        },
+        include: {
+            contractCodeConstaints: true
+        }
+    })
+}
+
+/**
+ * Creates a db entry
+ * @param {Data} req 
+ * @returns 
+ */
+exports.create = (req) => {
+    return prisma.userContractCodeCons.create({
+        data: {
+            label: req.body.label,
+            desc: req.body.label,
+            sourceCode: req.body.sourceCode,
+            avoid: req.body.avoid ? true: false
+        }
+    })
+}
+
+/**
+ * Find the db entry with the correct id
+ * @param {Id} constraintId 
+ * @returns 
+ */
+exports.find = (constraintId) => {
+    return prisma.userContractCodeCons.findUnique({
+        where: {
+            id : constraintId
+        }
+    })
+}
+
+/**
+ * Finds the constraint and updates it with the given info
+ * @param {Id} constraintId 
+ * @returns 
+ */
+exports.update = (constraintId) => {
+    return prisma.userContractCodeCons.update({
+        where: {
+            id: constraintId,
+        },
+        data: {
+            label: req.body.label,
+            desc: req.body.label,
+            sourceCode: req.body.sourceCode,
+            avoid: req.body.avoid ? true: false
+        },
+    })
+}
+
+/**
+ * Deletes the constraint with the given id
+ * @param {Id} constraintId 
+ * @returns 
+ */
+exports.delete = (constraintId) => {
+    return prisma.userContractCodeCons.delete({
+        where: {
+            id: constraintId,
+        },
+    })
+}

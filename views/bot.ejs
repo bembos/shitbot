@@ -3,6 +3,7 @@
     <div class="content-body"><!-- Basic Inputs start -->
       <section class="textarea-select">
       <!-- Textarea start -->
+        <%- include ('./layout/partials/messages') %>
         <div class="row">
           <div class="col-12 mt-3 mb-1">
               <h4 class="text-uppercase">Bot Configuration</h4>
@@ -33,21 +34,40 @@
                   <div class="card-block">
                       <div class="card-body">
                         <div class="card-body">
-                          <h5 class="mt-2"></h5>
-                          <fieldset class="form-group">
-                              <textarea class="form-control" id="basicTextarea" rows="3"></textarea>
-                          </fieldset>
-    
-                          <h5 class="mt-2">Textarea with Placeholder</h5>
-                          <fieldset class="form-group">
-                              <textarea class="form-control" id="placeTextarea" rows="3" placeholder="Simple Textarea"></textarea>
-                          </fieldset>
-    
-                          <h5 class="mt-2">Textarea with Description</h5>
-                          <fieldset class="form-group">
-                              <p class="text-muted">Textarea description text.</p>
-                              <textarea class="form-control" id="descTextarea" rows="3" placeholder="Textarea with description"></textarea>
-                          </fieldset>
+                          <form action="/bot/configuration/<%= bot.id %>" method="POST">
+
+                            <h5 class="mt-2">Wallet Private Key</h5>
+                            <fieldset class="form-group">
+                              <input type="text" class="form-control" id="placeholderInput" name="wallet" value="<%= bot.wallet %>">
+                            </fieldset>
+      
+                            <h5 class="mt-2">Initial Amount (BNB)r</h5>
+                            <fieldset class="form-group">
+                              <input type="number" step="0.001" class="form-control" id="placeholderInput" name="initialAmount" value="<%= bot.initialAmount %>">
+                            </fieldset>
+      
+                            <h5 class="mt-2">Multiplier Expected</h5>
+                            <fieldset class="form-group">
+                              <input type="number" step="0.1" class="form-control" id="placeholderInput" name="autoMultiplier" value="<%= bot.autoMultiplier %>">
+                            </fieldset>
+
+                            <h5 class="mt-2">Slippage</h5>
+                            <fieldset class="form-group">
+                              <input type="number" class="form-control" id="placeholderInput" name="autoMultiplier" value="<%= bot.slippage %>">
+                            </fieldset>
+
+                            <h5 class="mt-2">Max Number of Current Trades</h5>
+                            <fieldset class="form-group">
+                              <input type="number" class="form-control" id="placeholderInput" name="maxTransaction" value="<%= bot.maxTransaction %>">
+                            </fieldset>
+
+                            <h5 class="mt-2">Max Time per Trade (seconds)</h5>
+                            <fieldset class="form-group">
+                              <input type="number" class="form-control" id="placeholderInput" name="maxTime" value="<%= bot.maxTime %>">
+                            </fieldset>
+
+                            <button type="submit" class="btn mr-1 mb-1 btn-success btn-lg">Save</button>
+                          </form>
                         </div>
                       </div>
                   </div>
