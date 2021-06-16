@@ -1,54 +1,55 @@
 <div class="app-content content">
-    <div class="content-wrapper">
-      <div class="content-body">
-        <section class="textarea-select">
-          <div class="row">
-            <div class="col-12 mt-3 mb-1">
-                <h4 class="text-uppercase">Create Contract Code Constraint</h4>
-            </div>
+  <div class="content-wrapper">
+    <div class="content-body">
+      <section class="textarea-select">
+        <div class="row">
+          <div class="col-12 mt-3 mb-1">
+              <h4 class="text-uppercase">Create Contract Code Constraint</h4>
           </div>
-          <div class="row match-height">
-            <div class="col-lg-9 col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="card-title">Contract Code Constraint</h4>
-                    </div>
-                    <div class="card-block">
+        </div>
+        <div class="row match-height">
+          <div class="col-lg-9 col-md-12">
+              <div class="card">
+                  <div class="card-header">
+                      <h4 class="card-title">Contract Code Constraint</h4>
+                  </div>
+                  <div class="card-block">
+                      <div class="card-body">
                         <div class="card-body">
-                          <div class="card-body">
-                            <form action="constraints/contract-code/create>" method="POST" enctype="application/x-www-form-urlencoded">
-                              <input type="hidden" name="userId" value="user.id">
-                              <input type="hidden" name="contractCodeConstraintId" value="1">
+                          <form action="buy-orders/create>" method="POST" enctype="application/x-www-form-urlencoded">
+                            <input type="hidden" name="userId" value="user.id">
+                            <input type="hidden" name="blockchainId" value="1">
+                            <input type="hidden" name="buyOrderStatusId" value="1">
 
-                              <h5 class="mt-2">Label</h5>
+                            <h5 class="mt-2">Label</h5>
                               <fieldset class="form-group">
                                 <input type="text" class="form-control" name="label">
                               </fieldset>
-        
-                              <h5 class="mt-2">Short Desc.</h5>
+
+                              <h5 class="mt-2">Address</h5>
                               <fieldset class="form-group">
-                                <textarea class="form-control" name="desc" rows="2"></textarea>
-                              </fieldset>
-        
-                              <h5 class="mt-2">Source Code in Contract</h5>
-                              <fieldset class="form-group">
-                                <textarea class="form-control" name="sourceCode" rows="3"></textarea>
+                                <input type="text" class="form-control" name="address">
                               </fieldset>
 
-                              <h5 class="mt-2">Avoid this code (Unselected means to include)</h5>
-                                <fieldset class="form-group">
-                                <input type="checkbox" class="form-control" name="avoid">
+                              <h5 class="mt-2">Slippage</h5>
+                              <fieldset class="form-group">
+                                <input type="number" class="form-control" name="slippage">
                               </fieldset>
-  
-                              <button type="submit" class="btn mr-1 mb-1 btn-success btn-lg">Save</button>
-                            </form>
-                          </div>
+
+                              <h5 class="mt-2">Amount Given (BNB)r</h5>
+                              <fieldset class="form-group">
+                                <input type="number" step="0.001" class="form-control" name="amountGiven">
+                              </fieldset>
+
+                            <button type="submit" class="btn mr-1 mb-1 btn-success btn-lg">Save</button>
+                          </form>
                         </div>
-                    </div>
-                </div>
-            </div>
+                      </div>
+                  </div>
+              </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
+  </div>
 </div>

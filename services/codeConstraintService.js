@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
 /**
- * Retrieves the user's bot
+ * Retrieves the user's code constraints
  * @param {User} user 
  * @returns 
  */
@@ -28,7 +28,8 @@ exports.create = (req) => {
             label: req.body.label,
             desc: req.body.label,
             sourceCode: req.body.sourceCode,
-            avoid: req.body.avoid ? true: false
+            avoid: req.body.avoid ? true: false,
+            userId: parseInt(req.body.userId);
         }
     })
 }

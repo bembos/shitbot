@@ -6,7 +6,7 @@ exports.index = async (req, res, next) => {
     //Retrieve user with code constraints
     var user = await codeConstraintService.retrieveUserWithConstraints(req.user);
   
-    constraints = user.contractCodeConstaints;
+    var constraints = user.contractCodeConstaints;
   
     res.render('constraints/contract-code/index', {constraints: constraints});
 };
@@ -42,7 +42,7 @@ exports.edit = async (req, res, next) => {
     res.redirect('/constraints/contract-code');
 };
 
-exports.edit = async (req, res, next) => {
+exports.delete = async (req, res, next) => {
     
     //Create new instance
     await codeConstraintService.delete(req.body.constraint);

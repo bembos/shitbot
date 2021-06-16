@@ -38,6 +38,7 @@ model BuyOrderStatus {
 
 model BuyOrder {
   id                Int             @id @default(autoincrement())
+  label             String?
   address           String
   slippage          Int
   amountGiven       Float           @map(name: "amount_given")
@@ -75,7 +76,7 @@ model Bot {
 model TradeWindow {
   id             Int      @id @default(autoincrement())
   tokenAddress   String   @map(name: "token_address")
-  tokenName      Float    @map(name: "token_name")
+  tokenName      String    @map(name: "token_name")
   bot            Bot      @relation(fields: [botId], references: [id])
   botId          Int      @unique @map(name: "bot_id")
   logMessages    LogMessage[]
@@ -87,6 +88,7 @@ model TradeWindow {
 model TransactionStatus {
   id    Int     @default(autoincrement()) @id
   label String
+  transactions Transaction[]
 
   @@map(name: "transaction_statuses")
 }
@@ -102,13 +104,15 @@ model LogMessage {
 }
 
 model Transaction {
-  id              Int         @id @default(autoincrement())
-  tokenGiven      String?     @map(name: "token_given")
-  givenAmount     Float?      @map(name: "given_amount")
-  tokenReceived   String?     @map(name: "token_received")
-  receivedAmount  Float?      @map(name: "received_amount")
-  tradeWindow     TradeWindow @relation(fields: [tradeWindowId], references: [id])
-  tradeWindowId   Int         @unique  @map(name: "trade_window_id")
+  id                  Int               @id @default(autoincrement())
+  tokenGiven          String?           @map(name: "token_given")
+  givenAmount         Float?            @map(name: "given_amount")
+  tokenReceived       String?           @map(name: "token_received")
+  receivedAmount      Float?            @map(name: "received_amount")
+  transactionStatus   TransactionStatus @relation(fields: [transactionStatusId], references: [id])
+  transactionStatusId Int               @unique  @map(name: "transaction_status_id")
+  tradeWindow         TradeWindow       @relation(fields: [tradeWindowId], references: [id])
+  tradeWindowId       Int               @unique  @map(name: "trade_window_id")
 
   @@map(name: "transactions")
 }

@@ -4,41 +4,41 @@
         <section class="textarea-select">
           <div class="row">
             <div class="col-12 mt-3 mb-1">
-                <h4 class="text-uppercase">Edit Contract Code Constraint</h4>
+                <h4 class="text-uppercase">Edit Buy Order</h4>
             </div>
           </div>
           <div class="row match-height">
             <div class="col-lg-9 col-md-12">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title">Contract Code Constraint</h4>
+                        <h4 class="card-title">Buy Order</h4>
                     </div>
                     <div class="card-block">
                         <div class="card-body">
                           <div class="card-body">
-                            <form action="constraints/contract-code/edit/<%= constraint.id %>" method="POST" enctype="application/x-www-form-urlencoded">
+                            <form action="buy-orders/edit/<%= buyOrder.id %>" method="POST" enctype="application/x-www-form-urlencoded">
                               <input type="hidden" name="_method" value="PUT">
 
                               <h5 class="mt-2">Label</h5>
                               <fieldset class="form-group">
-                                <input type="text" class="form-control" name="label" value="<%= constraint.label %>">
-                              </fieldset>
-        
-                              <h5 class="mt-2">Short Desc.</h5>
-                              <fieldset class="form-group">
-                                <textarea class="form-control" name="desc" rows="2"><%= constraint.desc %></textarea>
-                              </fieldset>
-        
-                              <h5 class="mt-2">Source Code in Contract</h5>
-                              <fieldset class="form-group">
-                                <textarea class="form-control" name="sourceCode" rows="3"><%= constraint.sourceCode %></textarea>
+                                <input type="text" class="form-control" name="label" value="<%= buyOrder.label %>">
                               </fieldset>
 
-                              <h5 class="mt-2">Avoid this code (Unselected means to include)</h5>
-                                <fieldset class="form-group">
-                                <input type="checkbox" class="form-control" name="avoid" <% if (constraint.avoid) { %> checked <% } %> >
+                              <h5 class="mt-2">Address</h5>
+                              <fieldset class="form-group">
+                                <input type="text" class="form-control" name="address" value="<%= buyOrder.address %>">
                               </fieldset>
-  
+
+                              <h5 class="mt-2">Slippage</h5>
+                              <fieldset class="form-group">
+                                <input type="number" class="form-control" name="slippage" value="<%= buyOrder.slippage %>">
+                              </fieldset>
+
+                              <h5 class="mt-2">Amount Given (BNB)r</h5>
+                              <fieldset class="form-group">
+                                <input type="number" step="0.001" class="form-control" name="amountGiven" value="<%= buyOrder.amountGiven %>">
+                              </fieldset>
+      
                               <button type="submit" class="btn mr-1 mb-1 btn-success btn-lg">Save</button>
                             </form>
                           </div>
