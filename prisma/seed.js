@@ -77,7 +77,36 @@ async function main() {
                 }
             }
     })
-    
+/*
+    await prisma.tradeWindow.create({
+        data: 
+            {
+                tokenAddress: 'adijsdiasjdipjaspdajdpapisodjap',
+                tokenName: 'POOP',
+                botId: 1
+            }
+    })
+
+    await prisma.transaction.create({
+        data: 
+            {
+                tokenGiven: 'BNB',
+                givenAmount: 0.01,
+                tokenReceived: 'POOP',
+                receivedAmount: 1111111111111,
+                transactionStatusId: 1,
+                tradeWindowId: 1,
+            }
+    })
+
+    await prisma.logMessage.create({
+        data: 
+            {
+                content: 'Bought a, amount: 200302302',
+                tradeWindowId: 1
+            }
+    })
+    */
 }
 
 main()

@@ -34,10 +34,9 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <% for(transaction in transactions) { %>
+                                    <% for(let transaction of transactions) { %>
                                     <tr>
-                                        <th scope="row">1</th>
-                                        <td><%= transaction.createdAt %></td>
+                                        <td><%= moment(transaction.createdAt).format('hh:mm DD/MM/YYYY') %></td>
                                         <td><%= transaction.givenAmount %> <%= transaction.tokenGiven %></td>
                                         <td><%= transaction.receivedAmount %> <%= transaction.tokenReceived %></td>
                                         <td><%= transaction.transactionStatus.label %></td>

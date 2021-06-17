@@ -1,5 +1,6 @@
 exports.auth = (req,res,next) => {
     res.locals.auth = req.isAuthenticated();
+    res.locals.originalUrl = req.originalUrl;
     if (req.isAuthenticated()) return next();
     
     req.flash('error_msg' , 'Please login');

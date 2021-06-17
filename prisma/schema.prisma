@@ -29,9 +29,9 @@ model Blockchain {
 }
 
 model BuyOrderStatus {
-  id    Int     @id @default(autoincrement())
-  label String
-  buyOrders     BuyOrder[]
+  id        Int         @id @default(autoincrement())
+  label     String
+  buyOrders BuyOrder[]
 
   @@map(name: "buy_order_statuses")
 }
@@ -46,11 +46,11 @@ model BuyOrder {
   createdAt         DateTime        @default(now()) @map(name: "created_at")
   completedAt       DateTime?       @map(name: "completed_at")
   user              User            @relation(fields: [userId], references: [id])
-  userId            Int             @unique @map(name: "user_id")
+  userId            Int             @map(name: "user_id")
   blockchain        Blockchain      @relation(fields: [blockchainId], references: [id])
-  blockchainId      Int             @unique @map(name: "blockchain_id")
+  blockchainId      Int             @map(name: "blockchain_id")
   buyOrderStatus    BuyOrderStatus  @relation(fields: [buyOrderStatusId], references: [id])
-  buyOrderStatusId  Int             @unique @map(name: "buy_order_status_id")
+  buyOrderStatusId  Int             @map(name: "buy_order_status_id")
 
   @@map(name: "buy_orders")
 }
@@ -66,19 +66,21 @@ model Bot {
   slippage       Int
   user           User            @relation(fields: [userId], references: [id])
   userId         Int             @map(name: "user_id")
-  blockchain     Blockchain?      @relation(fields: [blockchainId], references: [id])
-  blockchainId   Int?             @unique @map(name: "blockchain_id")
+  blockchain     Blockchain?     @relation(fields: [blockchainId], references: [id])
+  blockchainId   Int?            @map(name: "blockchain_id")
   tradeWindows   TradeWindow[]   
 
   @@map(name: "bots") 
 }
 
 model TradeWindow {
-  id             Int      @id @default(autoincrement())
-  tokenAddress   String   @map(name: "token_address")
-  tokenName      String    @map(name: "token_name")
-  bot            Bot      @relation(fields: [botId], references: [id])
-  botId          Int      @unique @map(name: "bot_id")
+  id             Int            @id @default(autoincrement())
+  tokenAddress   String         @map(name: "token_address")
+  tokenName      String         @map(name: "token_name")
+  createdAt      DateTime       @default(now()) @map(name: "created_at")
+  finishedAt     DateTime?
+  bot            Bot            @relation(fields: [botId], references: [id])
+  botId          Int            @map(name: "bot_id")
   logMessages    LogMessage[]
   transactions   Transaction[]
 
@@ -86,7 +88,7 @@ model TradeWindow {
 }
 
 model TransactionStatus {
-  id    Int     @default(autoincrement()) @id
+  id    Int                  @default(autoincrement()) @id
   label String
   transactions Transaction[]
 
@@ -110,16 +112,16 @@ model Transaction {
   tokenReceived       String?           @map(name: "token_received")
   receivedAmount      Float?            @map(name: "received_amount")
   transactionStatus   TransactionStatus @relation(fields: [transactionStatusId], references: [id])
-  transactionStatusId Int               @unique  @map(name: "transaction_status_id")
+  transactionStatusId Int               @map(name: "transaction_status_id")
   tradeWindow         TradeWindow       @relation(fields: [tradeWindowId], references: [id])
-  tradeWindowId       Int               @unique  @map(name: "trade_window_id")
+  tradeWindowId       Int               @map(name: "trade_window_id")
 
   @@map(name: "transactions")
 }
 
 model ConstraintType {
-  id                           Int    @id  @default(autoincrement())
-  label                        String @unique
+  id                           Int                       @id  @default(autoincrement())
+  label                        String                    @unique
   generalConstraints           GeneralConstraints[]
   contractCodeConstraints      ContractCodeConstraint[]
 
@@ -131,14 +133,14 @@ model GeneralConstraints {
   marketCap        Boolean           @map(name: "market_cap")
   maxCap           BigInt            @map(name: "max_cap")
   minCap           BigInt            @map(name: "min_cap")
-  liqudity         Boolean           @map(name: "liquidity")
+  liquidity        Boolean           @map(name: "liquidity")
   maxLiq           BigInt            @map(name: "max_liq")
   minLiq           BigInt            @map(name: "min_liq")
   ownerRenounced   Boolean           @map(name: "owner_renounced")
   user             User              @relation(fields: [userId], references: [id])
   userId           Int               @map(name: "user_id")
   constraintType   ConstraintType    @relation(fields: [constraintTypeId], references: [id])
-  constraintTypeId Int               @unique @map(name: "constraint_type_id")
+  constraintTypeId Int               @map(name: "constraint_type_id")
 
   @@map(name: "general_constraints")
 }
@@ -147,8 +149,8 @@ model ContractCodeConstraint {
   id               Int                        @id  @default(autoincrement())
   label            String                     @unique
   desc             String
-  constraintType   ConstraintType                   @relation(fields: [constraintTypeId], references: [id])
-  constraintTypeId Int                        @unique @map(name: "constraint_type_id")
+  constraintType   ConstraintType             @relation(fields: [constraintTypeId], references: [id])
+  constraintTypeId Int                        @map(name: "constraint_type_id")
   userConfs        UserContractCodeCons[]
 
   @@map(name: "contract_code_constraints")
@@ -161,9 +163,9 @@ model UserContractCodeCons {
   sourceCode                String                  @db.LongText @map(name: "source_code")
   avoid                     Boolean
   contractCodeConstraint    ContractCodeConstraint  @relation(fields: [contractCodeConstraintId], references: [id])
-  contractCodeConstraintId  Int                     @unique @map(name: "contract_code_constraint_id")
+  contractCodeConstraintId  Int                     @map(name: "contract_code_constraint_id")
   user                      User                    @relation(fields: [userId], references: [id])
-  userId                    Int                     @unique @map(name: "user_id")
+  userId                    Int                     @map(name: "user_id")
 
   @@map(name: "user_contract_code_cons")
 }

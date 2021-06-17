@@ -29,7 +29,7 @@ exports.retrieveUserWithTradeWindows = (user) => {
 exports.retrieveTradeWindowWithLogs = (tradeWindow) => {
     return prisma.tradeWindow.findUnique({
         where : {
-            id: tradeWindow.id
+            id: parseInt(tradeWindow)
         },
         include: {
             logMessages: true
@@ -45,10 +45,14 @@ exports.retrieveTradeWindowWithLogs = (tradeWindow) => {
 exports.retrieveTradeWindowWithTransactions = (tradeWindow) => {
     return prisma.tradeWindow.findUnique({
         where : {
-            id: tradeWindow.id
+            id: parseInt(tradeWindow)
         },
         include: {
-            transactions: true
+            transactions: {
+                include: {
+                    transactionStatus: true
+                }
+            }
         }
     })
 }

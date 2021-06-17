@@ -10,7 +10,7 @@ const authController = require('../controllers/auth.js');
 const buyOrderController = require('../controllers/buyOrder.js');
 const constraintController = require('../controllers/constraint.js');
 const tradeWindowController = require('../controllers/tradeWindow.js');
-const codeConstraintController = require('../controllers/constraint.js');
+const codeConstraintController = require('../controllers/codeConstraint.js');
 
 //Validation
 const authValidation = require('../validators/auth');
@@ -26,11 +26,11 @@ router.post('/bot/configuration/:bot', auth, botController.configureBot)
 
 //Constraint routes
 router.get('/constraints', auth, constraintController.index);
-router.post('/constraints/general/:general', auth, constraintController.configureGeneralConstraints);
+router.post('/constraints/general', auth, constraintController.configureGeneralConstraints);
 
 //Contract Code constraint routes
 router.get('/constraints/contract-code', auth, codeConstraintController.index);
-router.get('/constraints/contract-code/showCreate', auth, codeConstraintController.showCreate);
+router.get('/constraints/contract-code/create', auth, codeConstraintController.showCreate);
 router.post('/constraints/contract-code/create', auth, codeConstraintController.create);
 router.get('/constraints/contract-code/edit/:constraint', auth, codeConstraintController.showEdit);
 router.put('/constraints/contract-code/edit', auth, codeConstraintController.edit);

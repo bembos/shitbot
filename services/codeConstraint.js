@@ -6,7 +6,7 @@ const prisma = new PrismaClient()
  * @param {User} user 
  * @returns 
  */
-exports.retrieveUserWithGeneralConstraints = (user) => {
+exports.retrieveUserWithCodeConstraints = (user) => {
     return prisma.user.findUnique({
         where : {
             id: user.id
@@ -29,7 +29,8 @@ exports.create = (req) => {
             desc: req.body.label,
             sourceCode: req.body.sourceCode,
             avoid: req.body.avoid ? true: false,
-            userId: parseInt(req.body.userId);
+            userId: parseInt(req.body.userId),
+            contractCodeConstraintId: 1
         }
     })
 }
@@ -42,7 +43,7 @@ exports.create = (req) => {
 exports.find = (constraintId) => {
     return prisma.userContractCodeCons.findUnique({
         where: {
-            id : constraintId
+            id : parseInt(constraintId)
         }
     })
 }
@@ -52,14 +53,14 @@ exports.find = (constraintId) => {
  * @param {Id} constraintId 
  * @returns 
  */
-exports.update = (constraintId) => {
+exports.update = (req) => {
     return prisma.userContractCodeCons.update({
         where: {
-            id: constraintId,
+            id: parseInt(req.body.constraintId),
         },
         data: {
             label: req.body.label,
-            desc: req.body.label,
+            desc: req.body.desc,
             sourceCode: req.body.sourceCode,
             avoid: req.body.avoid ? true: false
         },
@@ -74,7 +75,7 @@ exports.update = (constraintId) => {
 exports.delete = (constraintId) => {
     return prisma.userContractCodeCons.delete({
         where: {
-            id: constraintId,
+            id: parseInt(constraintId),
         },
     })
 }

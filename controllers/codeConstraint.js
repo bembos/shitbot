@@ -4,7 +4,7 @@ const codeConstraintService = require('../services/codeConstraint');
 exports.index = async (req, res, next) => {
   
     //Retrieve user with code constraints
-    var user = await codeConstraintService.retrieveUserWithConstraints(req.user);
+    var user = await codeConstraintService.retrieveUserWithCodeConstraints(req.user);
   
     var constraints = user.contractCodeConstaints;
   
@@ -30,6 +30,11 @@ exports.create = async (req, res, next) => {
 exports.showEdit = async (req, res, next) => {
   
     var constraint = await codeConstraintService.find(req.params.constraint);
+
+    //If it isn't the user updating it, return back with an error
+    if (constraint.userId != req.user.id) {
+        res.redirect('/constraints/contract-code/');
+    }
     
     res.render('constraints/contract-code/edit', {constraint: constraint});
 };

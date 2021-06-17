@@ -8,13 +8,13 @@
     </div>
     <div class="main-menu-content">
       <ul class="navigation navigation-main" id="main-menu-navigation" data-menu="menu-navigation">
-        <li class=" nav-item"><a href="/bot"><i class="ft-home"></i><span class="menu-title" data-i18n="">Bot home</span></a>
+        <li class=" nav-item <% if (originalUrl.includes('/bot')) { %> active <% } %>"><a href="/bot"><i class="ft-home"></i><span class="menu-title" data-i18n="">Bot home</span></a>
         </li>
-        <li class=" nav-item"><a href="/rules"><i class="ft-book"></i><span class="menu-title" data-i18n="">Rules</span></a>
+        <li class=" nav-item <% if (originalUrl.includes('/constraints')) { %> active <% } %>"><a href="/constraints"><i class="ft-book"></i><span class="menu-title" data-i18n="">Rules</span></a>
         </li>
-        <li class=" nav-item"><a href="/trade-windows"><i class="ft-pie-chart"></i><span class="menu-title" data-i18n="">Trades</span></a>
+        <li class=" nav-item <% if (originalUrl.includes('/trade-windows')) { %> active <% } %>"><a href="/trade-windows"><i class="ft-pie-chart"></i><span class="menu-title" data-i18n="">Trades</span></a>
         </li>
-        <li class=" nav-item"><a href="/buy-orders"><i class="ft-layers"></i><span class="menu-title" data-i18n="">Buy Orders</span></a>
+        <li class=" nav-item <% if (originalUrl.includes('/buy-orders')) { %> active <% } %>"><a href="/buy-orders"><i class="ft-layers"></i><span class="menu-title" data-i18n="">Buy Orders</span></a>
         </li>
       </ul>
     <div class="navigation-background"></div>

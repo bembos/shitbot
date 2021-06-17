@@ -41,6 +41,10 @@ app.use((req,res,next)=> {
     next();
 })
 
+//Parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
 //Method override
 const overrideHelper = require('./helpers/methodOverride'); 
 const methodOverride = require('method-override')
@@ -54,12 +58,14 @@ app.set('view engine', 'ejs');
 app.use(expressLayouts);
 app.set('layout', './layout/layout.ejs')
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
+//Middleware to get current url
+const urlHelper = require('./middleware/path');
+
+app.use('/', urlHelper.currentUrl, indexRouter);
 
 app.listen(3000);
 

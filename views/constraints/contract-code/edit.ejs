@@ -16,7 +16,8 @@
                     <div class="card-block">
                         <div class="card-body">
                           <div class="card-body">
-                            <form action="constraints/contract-code/edit/<%= constraint.id %>" method="POST" enctype="application/x-www-form-urlencoded">
+                            <form action="/constraints/contract-code/edit" method="POST" enctype="application/x-www-form-urlencoded">
+                              <input type="hidden" name="constraintId" value="<%= constraint.id %>">
                               <input type="hidden" name="_method" value="PUT">
 
                               <h5 class="mt-2">Label</h5>
@@ -36,7 +37,7 @@
 
                               <h5 class="mt-2">Avoid this code (Unselected means to include)</h5>
                                 <fieldset class="form-group">
-                                <input type="checkbox" class="form-control" name="avoid" <% if (constraint.avoid) { %> checked <% } %> >
+                                <input type="checkbox" name="avoid" <% if (constraint.avoid) { %> checked <% } %> >
                               </fieldset>
   
                               <button type="submit" class="btn mr-1 mb-1 btn-success btn-lg">Save</button>

@@ -32,10 +32,9 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <% for(logMessage in logMessages) { %>
+                                    <% for(let logMessage of logMessages) { %>
                                     <tr>
-                                        <th scope="row">1</th>
-                                        <td><%= logMessage.createdAt %></td>
+                                        <td><%= moment(logMessage.createdAt).format('hh:mm DD/MM/YYYY') %></td>
                                         <td><%= logMessage.content %></td>
                                     </tr>
                                     <% } %>

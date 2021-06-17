@@ -35,7 +35,7 @@ exports.create = (req) => {
             amountGiven:parseFloat(req.body.amountGiven),
             userId: parseInt(req.body.userId),
             blockchainId: parseInt(req.body.blockchainId),
-            buyOrderStatusId: parseInt(req.buyOrderStatusId)
+            buyOrderStatusId: parseInt(req.body.buyOrderStatusId)
         }
     })
 }
@@ -48,7 +48,7 @@ exports.create = (req) => {
 exports.find = (buyOrderId) => {
     return prisma.buyOrder.findUnique({
         where: {
-            id : buyOrderId
+            id : parseInt(buyOrderId)
         }
     })
 }
@@ -58,10 +58,10 @@ exports.find = (buyOrderId) => {
  * @param {Id} buyOrderId 
  * @returns 
  */
-exports.update = (buyOrderId) => {
+exports.update = (req) => {
     return prisma.buyOrder.update({
         where: {
-            id: buyOrderId,
+            id: parseInt(req.body.buyOrder),
         },
         data: {
             label: req.body.label,
@@ -80,7 +80,7 @@ exports.update = (buyOrderId) => {
 exports.delete = (buyOrderId) => {
     return prisma.buyOrder.delete({
         where: {
-            id: buyOrderId,
+            id: parseInt(buyOrderId)    ,
         },
     })
 }

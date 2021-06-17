@@ -14,8 +14,8 @@
                     <h4 class="card-title">Constraints registered</h4>
                     <a class="heading-elements-toggle"><i class="la la-ellipsis-v font-medium-3"></i></a>
                     <div class="heading-elements">
-                        <form action="constraints/contract-code/create/" method="GET">
-                            <button type="button" class="btn btn-primary btn-min-width mr-1 mb-1">Primary</button>
+                        <form action="/constraints/contract-code/create" method="GET">
+                            <button type="submit" class="btn btn-primary btn-min-width mr-1 mb-1">Create</button>
                         </form>
                         <ul class="list-inline mb-0">
                             <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
@@ -36,20 +36,21 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <% for(constraint in constraints) { %>
+                                    <% for (let constraint of constraints) { %>
                                     <tr>
-                                        <th scope="row">1</th>
-                                        <td><%= contraint.label %></td>
-                                        <td><%= contraint.desc %></td>
+                                        <td><%= constraint.label %></td>
+                                        <td><%= constraint.desc %></td>
                                         <td>
-                                            <form action="constraints/contract-code/edit/<%= constraint.id %>" enctype="application/x-www-form-urlencoded" method="GET">
-                                                <button type="submit" class="btn btn-info"><i class="la la-cog"></i></button>
-                                            </form>
-                                            <form action="constraints/contract-code/delete" enctype="application/x-www-form-urlencoded" method="POST">
-                                                <input type="hidden" name="_method" value="DELETE">
-                                                <input type="hidden" name="constraint" value="<%= constraint.id %>">
-                                                <button type="submit" class="btn btn-info"><i class="la la-remove"></i></button>
-                                            </form>
+                                            <div class="row">
+                                                <form action="/constraints/contract-code/edit/<%= constraint.id %>" enctype="application/x-www-form-urlencoded" method="GET">
+                                                    <button type="submit" class="btn btn-info"><i class="la la-search"></i></button>
+                                                </form>
+                                                <form action="/constraints/contract-code/delete" enctype="application/x-www-form-urlencoded" method="POST">
+                                                    <input type="hidden" name="_method" value="DELETE">
+                                                    <input type="hidden" name="constraint" value="<%= constraint.id %>">
+                                                    <button type="submit" class="btn btn-danger"><i class="la la-remove"></i></button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                     <% } %>

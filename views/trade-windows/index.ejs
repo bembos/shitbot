@@ -28,20 +28,21 @@
                             <table class="table">
                                 <thead>
                                     <tr>
-                                        <th>Created At</th>
+                                        <th>Began At</th>
+                                        <th>Ended At</th>
                                         <th>Token Name</th>
                                         <th>Messages</th>
                                         <th>Transactions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <% for(tradeWindow in tradeWindows) { %>
+                                    <% for(let tradeWindow of tradeWindows) { %>
                                     <tr>
-                                        <th scope="row">1</th>
-                                        <td><%= tradeWindow.createdAt %></td>
+                                        <td><%= moment(tradeWindow.createdAt).format('hh:mm DD/MM/YYYY')%></td>
+                                        <td><%= moment(tradeWindow.endedAt).format('hh:mm DD/MM/YYYY') %></td>
                                         <td><%= tradeWindow.tokenName %></td>
                                         <td><a href="trade-windows/<%= tradeWindow.id %>/log-messages">Log Messages</a></td>
-                                        <td><a href="trade-windows/<%= tradeWindow.id %>/transactions">Log Messages</a></td>
+                                        <td><a href="trade-windows/<%= tradeWindow.id %>/transactions">Transactions</a></td>
                                     </tr>
                                     <% } %>
                                 </tbody>

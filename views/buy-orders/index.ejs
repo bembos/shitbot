@@ -14,20 +14,15 @@
                     <h4 class="card-title">Buy Orders Table</h4>
                     <a class="heading-elements-toggle"><i class="la la-ellipsis-v font-medium-3"></i></a>
                     <div class="heading-elements">
-                        <form action="constraints/contract-code/create/" method="GET">
-                            <button type="button" class="btn btn-primary btn-min-width mr-1 mb-1">Primary</button>
+                        <form action="/buy-orders/create" method="GET">
+                            <button type="submit" class="btn btn-primary btn-min-width mr-1 mb-1">Create</button>
                         </form>
-                        <ul class="list-inline mb-0">
-                            <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
-                            <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
-                            <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
-                        </ul>
                     </div>
                 </div>
                 <div class="card-content collapse show">
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table">
+                            <table class="table" id="buyOrders">
                                 <thead>
                                     <tr>
                                         <th>Created At</th>
@@ -37,21 +32,22 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <% for(buyOrder in buyOrders) { %>
+                                    <% for(let buyOrder of buyOrders) { %>
                                     <tr>
-                                        <th scope="row">1</th>
-                                        <td><%= buyOrder.createdAt %></td>
+                                        <td><%= moment(buyOrder.createdAt).format('hh:mm DD/MM/YYYY')%></td>
                                         <td><%= buyOrder.label %></td>
                                         <td><%= buyOrder.buyOrderStatus.label %></td>
                                         <td>
-                                            <form action="buy-orders/edit/<%= buyOrder.id %>" enctype="application/x-www-form-urlencoded" method="GET">
-                                                <button type="submit" class="btn btn-info"><i class="la la-cog"></i></button>
-                                            </form>
-                                            <form action="buy-orders/delete" enctype="application/x-www-form-urlencoded" method="POST">
-                                                <input type="hidden" name="_method" value="DELETE">
-                                                <input type="hidden" name="constraint" value="<%= buyOrder.id %>">
-                                                <button type="submit" class="btn btn-info"><i class="la la-remove"></i></button>
-                                            </form>
+                                            <div class="row">
+                                                <form action="buy-orders/edit/<%= buyOrder.id %>" enctype="application/x-www-form-urlencoded" method="GET">
+                                                    <button type="submit" class="btn btn-info"><i class="la la-cog"></i></button>
+                                                </form>
+                                                <form action="buy-orders/delete" enctype="application/x-www-form-urlencoded" method="POST">
+                                                    <input type="hidden" name="_method" value="DELETE">
+                                                    <input type="hidden" name="buyOrder" value="<%= buyOrder.id %>">
+                                                    <button type="submit" class="btn btn-danger"><i class="la la-remove"></i></button>
+                                                </form>
+                                            </div>           
                                         </td>
                                     </tr>
                                     <% } %>
@@ -67,3 +63,11 @@
       </div>
     </div>
   </div>
+
+  <script type="text/javascript">
+        $(document).ready(function() {
+            $('#buyOrders').DataTable( {
+                "order": [[ 1, "desc" ]]
+            } );
+        } );
+  </script>

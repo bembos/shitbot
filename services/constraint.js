@@ -11,7 +11,7 @@ exports.createGeneralContraintsForUser = (user) => {
             marketCap : false,
             maxCap : 0,
             minCap : 0,
-            liqudity: false,
+            liquidity: false,
             maxLiq : 0,
             minLiq: 0,
             ownerRenounced: false,
@@ -33,13 +33,13 @@ exports.updateGeneralConstraints = (req, constraintId) => {
             id: parseInt(constraintId)
         },
         data : {
-            marketCap : req.marketCap ? true : false,
-            maxCap : req.maxCap,
-            minCap : req.minCap,
-            liqudity: req.liqudity ? true : false,
-            maxLiq : req.maxLiq,
-            minLiq: req.minLiq,
-            ownerRenounced: req.ownerRenounced ? true : false,
+            marketCap : req.body.marketCap ? true : false,
+            maxCap : parseInt(req.body.maxCap),
+            minCap : parseInt(req.body.minCap),
+            liquidity: req.body.liquidity ? true : false,
+            maxLiq : parseInt(req.body.maxLiq),
+            minLiq: parseInt(req.body.minLiq),
+            ownerRenounced: req.body.ownerRenounced ? true : false,
         }
     })
 }

@@ -16,8 +16,8 @@
                     <div class="card-block">
                         <div class="card-body">
                           <div class="card-body">
-                            <form action="constraints/contract-code/create>" method="POST" enctype="application/x-www-form-urlencoded">
-                              <input type="hidden" name="userId" value="user.id">
+                            <form action="/constraints/contract-code/create" method="POST" enctype="application/x-www-form-urlencoded">
+                              <input type="hidden" name="userId" value="<%=user.id%>">
                               <input type="hidden" name="contractCodeConstraintId" value="1">
 
                               <h5 class="mt-2">Label</h5>
@@ -37,7 +37,7 @@
 
                               <h5 class="mt-2">Avoid this code (Unselected means to include)</h5>
                                 <fieldset class="form-group">
-                                <input type="checkbox" class="form-control" name="avoid">
+                                <input type="checkbox" name="avoid">
                               </fieldset>
   
                               <button type="submit" class="btn mr-1 mb-1 btn-success btn-lg">Save</button>

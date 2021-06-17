@@ -14,20 +14,21 @@ exports.index = async (req, res, next) => {
 
 exports.configureGeneralConstraints = async (req, res, next) => {
   
-  var user = await botService.retrieveUserWithGeneralConstraints(req.user);
+  var user = await constraintService.retrieveUserWithGeneralConstraints(req.user);
 
   //Check if the bot being updated is the users
-  if (req.params.general != user.generalConstraints.id){
-    req.flash('error_msg', 'Error updating')
+  if (req.body.general != user.generalConstraints.id){
 
-    res.redirect('constraints')
+    req.flash('error_msg', 'Auth Error')
+
+    res.redirect('/constraints')
   }
 
   //Update constraints configuration
-  general = await constraintService.updateGeneralConstraints(req, req.params.general);
+  general = await constraintService.updateGeneralConstraints(req, req.body.general);
 
   req.flash('success_msg' , 'Updated Correctly');
 
-  res.render('constraints/index', {general: general});
+  res.redirect('/constraints');
 };
 
