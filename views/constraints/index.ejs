@@ -49,6 +49,11 @@
                                             <label for="maxLiquidity">Max:</label>
                                             <input type="number" class="form-control" id="maxLiquidity"name="minLiq" value="<%= general.minLiq %>">
                                         </fieldset>
+
+                                        <h5 class="mt-2">Liquidity Pool Locked</h5>
+                                        <fieldset class="form-group">
+                                        <input type="checkbox"  name="locked" <% if (general.lockedLiquidity) { %> checked <% } %> >
+                                        </fieldset>
                                         
                                         <button type="submit" class="btn mr-1 mb-1 btn-success">Save</button>
                                     </form>

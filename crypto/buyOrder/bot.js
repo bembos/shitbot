@@ -22,8 +22,6 @@ export class Bot{
 
         //Perform trade
 
-        //Transform BNB into WBNB
-
         //Removes all listener for safety
         this.mintContract.removeAllListeners();
     }

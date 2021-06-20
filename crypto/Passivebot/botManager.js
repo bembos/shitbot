@@ -21,6 +21,8 @@ export class BotManager {
         let botListener = this.activeBots[bot];
 
         this.newPairEventEmitter.newTokenEvent.removeListener('newToken', botListener.onNewToken);
+
+        delete this.activeBots[bot];
     }
 }
 

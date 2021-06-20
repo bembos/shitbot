@@ -137,6 +137,7 @@ model GeneralConstraints {
   maxLiq           BigInt            @map(name: "max_liq")
   minLiq           BigInt            @map(name: "min_liq")
   ownerRenounced   Boolean           @map(name: "owner_renounced")
+  lockedLiquidity  Boolean           @map(name: "locked_liquidity")
   user             User              @relation(fields: [userId], references: [id])
   userId           Int               @map(name: "user_id")
   constraintType   ConstraintType    @relation(fields: [constraintTypeId], references: [id])

@@ -15,6 +15,7 @@ exports.createGeneralContraintsForUser = (user) => {
             maxLiq : 0,
             minLiq: 0,
             ownerRenounced: false,
+            lockedLiquidity: false,
             userId: user.id,
             constraintTypeId: 1
         }
@@ -39,6 +40,7 @@ exports.updateGeneralConstraints = (req, constraintId) => {
             liquidity: req.body.liquidity ? true : false,
             maxLiq : parseInt(req.body.maxLiq),
             minLiq: parseInt(req.body.minLiq),
+            lockedLiquidity: req.body.locked ? true : false,
             ownerRenounced: req.body.ownerRenounced ? true : false,
         }
     })
