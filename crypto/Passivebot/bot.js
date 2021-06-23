@@ -19,6 +19,7 @@ class Bot {
         this.queue = queue;
     }
     
+    //Function called when a new token is given to the bot
     onNewToken = function (currencyTokenAddress, newTokenAddress, contractProcessedData) {
 
         //If it is successfuly validated
@@ -68,6 +69,8 @@ class Bot {
             const tx = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
             const receipt = await tx.wait();
 
+            //Create log
+
             //Get account balance
             const router = new ethers.Contract(
                 newTokenAddress,
@@ -87,6 +90,59 @@ class Bot {
             
 
         }
+    }
+
+    //Function that tries to trade the token for a profit
+    async processSellOrder(tradeData) {
+
+        let trade = tradeData.trade;
+        let multiplier = tradeData.multiplier;
+        let initialAmount = tradeData.initialAmount;
+        let slippage = tradeData.slippage;
+        let currencyTokenAddress = tradeData.currencyTokenAddress;
+        let newTokenAddress = tradeData.newTokenAddress;
+        let walletAddress = tradeData.walletAddress;
+        let router = tradeData.router;
+        let account = tradeData.account;
+        let currentTokens = tradeData.currentTokens;
+        let decimals = tradeData.decimals;
+
+        //Send a request for the price every 5 seconds
+        let sellTimer = setInterval(() => {
+            //Check current price
+            const currencyIfSwapped = trade.executionPrice.toSignificant(6);
+
+            //If the amount given is the desired amount
+            if (currencyIfSwapped >= multiplier * initialAmount) {
+
+                //Approve the token
+                let abi = ["function approve(address _spender, uint256 _value) public returns (bool success)"];
+                let contract = new ethers.Contract(newTokenAddress, abi, account);
+                let aproveResponse = await contract.approve(this.router, ethers.utils.parseUnits(currentTokens, decimals));
+                console.log(JSON.stringify(aproveResponse));
+
+                //Create log
+
+                //Set up parameters
+                const slippageTolerance = new Percent(slippage, '100') // 50 bips, or 0.50%
+                const amountOutMin = trade.minimumAmountOut(slippageTolerance).raw // needs to be converted to e.g. hex
+                const path = [newTokenAddress, currencyTokenAddress]
+                const to = walletAddress // should be a checksummed recipient address
+                const deadline = Math.floor(Date.now() / 1000) + 60 * 20 // 20 minutes from the current Unix time
+                const value = trade.inputAmount.raw // // needs to be converted to e.g. hex
+
+                //Perform trade
+                const tx = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
+                const receipt = await tx.wait();
+
+                //Create Log
+
+
+                //End interval
+                clearInterval(sellTimer)
+            }
+
+        }, 5000)
     }
 
     //Validates the new token received based on user's rules
