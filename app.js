@@ -55,7 +55,11 @@ const Redis = require('ioredis');
 const redis = new Redis({
     host: env('REDIS_HOST'),
     port: env('REDIS_PORT'),
-    password: env('REDIS_PASSWORD')
+    password: env('REDIS_PASSWORD'),
+	limiter: {
+		max: 100,
+		duration: 10000
+		}
 });
 
 //Set up crypto pancake swap listener

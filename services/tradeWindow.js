@@ -56,3 +56,18 @@ exports.retrieveTradeWindowWithTransactions = (tradeWindow) => {
         }
     })
 }
+
+/**
+ * 
+ * @param {fields to create trade window with} fields 
+ * @returns 
+ */
+exports.create = (fields) => {
+    return prisma.tradeWindow.create({
+        data : {
+            tokenAddress : fields.tokenAddress,
+            tokenName : fields.tokenName,
+            botId : fields.botId
+        }
+    })
+}

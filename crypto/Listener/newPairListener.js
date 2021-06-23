@@ -71,7 +71,7 @@ class NewPairListener {
         let totalSupply = response.result;
         marketCap       = totalSupply * newTokenInCurrency * currencyInStablePrice;
 
-        return new ContractProcessedData(marketCap, liquidity, sourceCode);
+        return new ContractProcessedData(newToken, pair, marketCap, liquidity, sourceCode,);
     }
 
     //Handles new contracts being created on pancake swap

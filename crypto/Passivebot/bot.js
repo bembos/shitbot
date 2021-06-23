@@ -2,6 +2,8 @@
 const { ethers } = require('ethers'); 
 const { ChainId, Token, Fetcher, Route, Trade, TradeType, TokenAmount, Percent } = require('@uniswap/sdk');
 
+//Services
+const tradeWindowService = require('../../services/tradeWindow');
 
 class Bot {
 
@@ -27,13 +29,21 @@ class Bot {
             const wallet   =  ethers.Wallet(this.bot.walletPrivate);
             const account  = wallet.connect(provider);
 
-            const currencyToken = await Fetcher.fetchTokenData(ChainId.MAINNET, currencyTokenAddress, provider);
-            const newToken      = await Fetcher.fetchTokenData(ChainId.MAINNET, newTokenAddress, provider);
-            const pair          = await Fetcher.fetchPairData(WBNBToken, newToken, provider);
+            const currencyToken = contractProcessedData.currencyToken;
+            const newToken      = contractProcessedData.newToken;
+            const pair          = contractProcessedData.pair;
 
+            //Create trade window
+            //Create a trade window
+            tradeWindowService.create({
+                tokenAddress : newTokenAddress,
+                tokenName : newToken.name,
+                botId : bot.id
+            })
+
+            //Initialize trade
             const newTokenroute = new Route([pair], currencyToken)
             const newTokenTrade = new Trade(newTokenroute, new TokenAmount(currencyToken, ethers.utils.parseUnits(this.bot.initialAmount, 'ether').toString(), TradeType.EXACT_INPUT))
-
 
             //Define parameters for trading
             const slippageTolerance = new Percent(bot.slippage, '100') // 50 bips, or 0.50%
@@ -55,11 +65,23 @@ class Bot {
               );
 
             //Perform the trade
-            const tx = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value}).send();
+            const tx = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
             const receipt = await tx.wait();
 
-            //Construct trade structure
+            //Get account balance
+            const router = new ethers.Contract(
+                newTokenAddress,
+                [
+                    "function balanceOf(address owner) view returns (uint256)",
+                ],
+                account
+            )
 
+            const currentTokens = await contract.balanceOf(this.bot.walletAddress);
+
+            //Construct trade structure
+            const sellTokenRoute = new Route([pair], newTokenAddress)
+            const sellTokenTrade = new Trade(sellTokenRoute, new TokenAmount(newTokenAddress, ethers.utils.parseUnits(currentTokens, newToken.decimals).toString(), TradeType.EXACT_INPUT))
 
             //Pass the trade to the job queue
             
