@@ -36,9 +36,14 @@
                         <div class="card-body">
                           <form action="/bot/configuration/<%= bot.id %>" method="POST">
 
+                            <h5 class="mt-2">Wallet Public Key</h5>
+                            <fieldset class="form-group">
+                              <input type="text" class="form-control" id="placeholderInput" name="walletAddress" value="<%= bot.walletAddress %>">
+                            </fieldset>
+
                             <h5 class="mt-2">Wallet Private Key</h5>
                             <fieldset class="form-group">
-                              <input type="text" class="form-control" id="placeholderInput" name="wallet" value="<%= bot.wallet %>">
+                              <input type="text" class="form-control" id="placeholderInput" name="walletPrivate" value="<%= bot.walletPrivate %>">
                             </fieldset>
       
                             <h5 class="mt-2">Initial Amount (BNB)r</h5>

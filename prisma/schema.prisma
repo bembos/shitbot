@@ -62,7 +62,8 @@ model Bot {
   autoMultiplier Float           @map(name: "auto_multiplier")
   maxTransaction Int             @map(name: "max_transaction")
   maxTime        Int             @map(name: "max_time")
-  wallet         String
+  walletAddress  String          @map(name: "wallet_address")
+  walletPrivate  String          @map(name: "wallet_private")
   slippage       Int
   user           User            @relation(fields: [userId], references: [id])
   userId         Int             @map(name: "user_id")

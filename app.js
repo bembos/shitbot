@@ -1,7 +1,7 @@
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
-var cookieParser = require('cookie-parser');
+const { env } = require('process');
 
 //Set up the app
 var app = express();
@@ -49,6 +49,18 @@ app.use(express.urlencoded({ extended: false }));
 const overrideHelper = require('./helpers/methodOverride'); 
 const methodOverride = require('method-override')
 app.use(methodOverride(overrideHelper.methodInBody))
+
+//Redis stuff
+const Redis = require('ioredis');
+const redis = new Redis({
+    host: env('REDIS_HOST'),
+    port: env('REDIS_PORT'),
+    password: env('REDIS_PASSWORD')
+});
+
+//Set up crypto pancake swap listener
+const setUpHelper = require('./helpers/setUpPancake')
+setUpHelper.setUp(redis);
 
 //Routes
 var indexRouter = require('./routes/index');
