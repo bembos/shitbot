@@ -31,3 +31,23 @@ exports.configureBot = async (req, res, next) => {
   res.render('bot', {bot: bot});
 };
 
+//Starts the bot
+exports.start = async (req, res, next) => {
+
+  await botService.startBot(req);
+
+  req.flash('sucess_msg', 'Bot Successfuly started'); 
+
+  res.redirect('/bot');
+}
+
+
+//Stops the bot
+exports.stop = async (req, res, next) => {
+
+  await botService.stopBot(req);
+
+  req.flash('sucess_msg', 'Bot Successfuly stopped'); 
+
+  res.redirect('/bot');
+}

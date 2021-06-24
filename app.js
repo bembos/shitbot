@@ -63,8 +63,9 @@ const redis = new Redis({
 });
 
 //Set up crypto pancake swap listener
-const setUpHelper = require('./helpers/setUpPancake')
-setUpHelper.setUp(redis);
+const PancakeSwapManager = require('./crypto/pancakeSwapManager/pancakeSwapManager');
+const pancakeSwapManager = new PancakeSwapManager();
+pancakeSwapManager.initialize(redis)
 
 //Routes
 var indexRouter = require('./routes/index');

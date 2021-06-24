@@ -1,6 +1,9 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
+//Pancake swap manager
+const PancakeSwapManager = require('../crypto/pancakeSwapManager/pancakeSwapManager')
+
 /**
  * Retrieves the user's buy orders
  * @param {User} user 
@@ -27,7 +30,9 @@ exports.retrieveUserWithBuyOrders = (user) => {
  * @returns 
  */
 exports.create = (req) => {
-    return prisma.buyOrder.create({
+
+    //Creates database row
+    buyOrder = await prisma.buyOrder.create({
         data: {
             label: req.body.label,
             address: req.body.address,
@@ -38,6 +43,36 @@ exports.create = (req) => {
             buyOrderStatusId: parseInt(req.body.buyOrderStatusId)
         }
     })
+
+    //Retrieve instance of buy order manager
+    let manager = PancakeSwapManager.getBuyOrderManager();
+
+    //Retrieve data required 
+    buyOrder = await prisma.buyOrder.findUnique({
+        where : {
+            id: buyOrder
+        },
+        include: {
+            buyOrders: {
+                include : {
+                    user: {
+                        include : {
+                            bot : true
+                        }
+                    }
+                }
+            }
+        }
+    })
+
+    //Start a new bot instance with the data
+    manager.start({ 
+        buyOrder : buyOrder,
+        user : buyOrder.user,
+        bot : buyOrder.user.bot
+    });
+
+    return buyOrder;
 }
 
 /**
@@ -79,6 +114,18 @@ exports.update = (fields) => {
  * @returns 
  */
 exports.delete = (buyOrderId) => {
+
+    let buyOrder = await this.find(buyOrderId)
+
+    //If the status given is 1
+    if (buyOrder.buyOrderStatusId == 1) {
+        
+        //Stop the buy order
+        let manager = PancakeSwapManager.getBuyOrderManager();
+        manager.stop({ buyOrder : buyOrder});
+    }
+
+    //Create database row
     return prisma.buyOrder.delete({
         where: {
             id: parseInt(buyOrderId)    ,

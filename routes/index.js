@@ -23,6 +23,8 @@ router.post('/logout', auth, authController.logout);
 //Bot routes
 router.get('/bot', auth, botController.index);
 router.post('/bot/configuration/:bot', auth, botController.configureBot)
+router.post('/bot/start', auth, botController.startBot)
+router.post('/bot/stop', auth, botController.stopBot)
 
 //Constraint routes
 router.get('/constraints', auth, constraintController.index);

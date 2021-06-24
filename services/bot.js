@@ -1,5 +1,9 @@
 const { PrismaClient } = require('@prisma/client')
+const PancakeSwapManager = require('../crypto/pancakeSwapManager/pancakeSwapManager')
 const prisma = new PrismaClient()
+
+//Pancake swap manager
+const PancakeSwapManager = require('../crypto/pancakeSwapManager/pancakeSwapManager')
 
 /**
  * Creates a bot for a user
@@ -58,4 +62,66 @@ exports.retrieveUserWithBot = (user) => {
             bot: true
         }
     })
+}
+
+/**
+ * Starts the passive bot functionality
+ * @param {request} req 
+ */
+exports.start = (req) => {
+
+    let user = req.user;
+    let passiveBotManager = PancakeSwapManager.getPassiveBotManager();
+
+    //Retrieve user data
+    user = prisma.user.findUnique({
+        where : {
+            id: user.id
+        },
+        include: {
+            bot: true,
+            generalConstraints: true,
+            contractCodeConstaints: true
+        }
+    })
+
+    //Check if it has general constraints
+    if (!user.generalConstraints) {
+        req.flash('error_msg', 'Bot needs general configurations to be set'); 
+
+        return
+    } 
+
+    //Start the instance
+    passiveBotManager.start({
+        bot : user.bot,
+        user : user,
+        generalConfCons: generalConstraints,
+        contractCodeCons : contractCodeConstaints
+    });
+}
+
+/**
+ * Stop the passive bot functionality
+ * @param {request} req 
+ */
+exports.stop = (req) => {
+
+    let user = req.user;
+    let passiveBotManager = PancakeSwapManager.getPassiveBotManager();
+
+    //Retrieve user data
+    user = prisma.user.findUnique({
+        where : {
+            id: user.id
+        },
+        include: {
+            bot: true
+        }
+    })
+
+    //Start the instance
+    passiveBotManager.stop({
+        bot : user.bot
+    });
 }

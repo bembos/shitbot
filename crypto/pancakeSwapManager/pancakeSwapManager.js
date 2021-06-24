@@ -1,21 +1,22 @@
 const NewPairListener = require('../Listener/newPairListener');
 const PassiveBotManager = require('../Passivebot/botManager');
 const BuyOrderBotManager = require('../buyOrder/botManager');
+const { env } = require('process');
 
 class PancakeSwapManager {
 
     static passiveBotManager;
     static buyOrderBotManager;
 
-    getPassiveBotManager() {
+    static getPassiveBotManager() {
         return passiveBotManager;
     }
 
-    getBuyOrderManager() {
+    static getBuyOrderManager() {
         return buyOrderBotManager;
     }
 
-    initialize(redisConnection, currencyTokenAddress, stableTokenAddress, factoryAddress, provider) {
+    initialize(redisConnection) {
 
         let currencyTokenAddress = env('WBNB_ADDRESS') ;
         let stableTokenAddress = env('USDT_ADDRESS');
@@ -28,7 +29,6 @@ class PancakeSwapManager {
 
         this.passiveBotManager = new PassiveBotManager(this.newPairListener, redisConnection, router, provider);
         this.buyOrderBotManager = new BuyOrderBotManager(router, provider);
-
     }
 }
 

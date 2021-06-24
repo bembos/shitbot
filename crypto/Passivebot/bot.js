@@ -132,7 +132,7 @@ class Bot {
         const walletPrivate = tradeData.walletPrivate;
         const currentTokens = tradeData.currentTokens;
         const routerAddress = tradeData.routerAddress;
-        const maxTime = tradeData.maxTime;
+        const maxTime = tradeData.maxTime ? tradeData.maxTime : 300;
 
         //Initialize required parameters
         const provider = ethers.providers.WebSocketProvider(tradeData.provider)
