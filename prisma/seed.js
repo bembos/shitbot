@@ -28,7 +28,7 @@ async function main() {
                 label: 'Waiting to Buy'
             },
             {
-                label: 'Waiting to Sell'  
+                label: 'Failed'  
             },
             {
                 label: 'Completed'
@@ -41,9 +41,6 @@ async function main() {
         data: [
             {
                 label: 'Bought'
-            },
-            {
-                label: 'Waiting to Sell'  
             },
             {
                 label: 'Completed'

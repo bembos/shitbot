@@ -58,16 +58,17 @@ exports.find = (buyOrderId) => {
  * @param {Id} buyOrderId 
  * @returns 
  */
-exports.update = (req) => {
+exports.update = (fields) => {
     return prisma.buyOrder.update({
         where: {
-            id: parseInt(req.body.buyOrder),
+            id: parseInt(fields.buyOrder),
         },
         data: {
-            label: req.body.label,
-            address: req.body.address,
-            slippage: parseInt(req.body.slippage),
-            amountGiven:parseFloat(req.body.amountGiven),
+            label: fields.label,
+            address: fields.address,
+            slippage: parseInt(fields.slippage),
+            amountGiven:parseFloat(fields.amountGiven),
+            buyOrderStatusId: statusId
         },
     })
 }

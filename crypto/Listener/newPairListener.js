@@ -15,20 +15,19 @@ const { ContractProcessedData} = require('../utilities/contractProcessedData');
 
 class NewPairListener {
 
-    //Fields for later use
-    factory;
-    provider;
-    currencyToken;
-    currencyTrade
-    newTokenEvent;
-    stableTokenAddress;
+    //Helper to access this in function
+    self = this;
 
-    //Set up required initial 
-    constructor(currencyTokenAddress, stableTokenAddress, factoryAddress, provider) {
+    //Properties to be accessed later
+    newTokenEvent;
+
+    //Set up required initial fields 
+    constructor(currencyTokenAddress, stableTokenAddress, factoryAddress, providerAddress) {
         this.currencyTokenAddress = currencyTokenAddress;
         this.stableTokenAddress = stableTokenAddress;
+        this.providerAddress = providerAddress
         this.factoryAddress = factoryAddress;
-        this.provider = provider;
+        this.provider =  ethers.providers.WebSocketProvider(providerAddress);;
     }
 
     async processData(newTokenAddress) {
@@ -44,15 +43,16 @@ class NewPairListener {
         if (response.status == "0" || response,result[0].sourceCode == "")  return null;
         
         sourcecode = response.result[0].sourceCode;
-
+        
         //If Basic check pass initialze data
-        const currencyInStablePrice = this.currencyTrade.executionPrice.toSignificant(6);
+        const currencyTrade  = new Trade(self.curencyRoute, new TokenAmount(self.currencyToken, ethers.utils.parseUnits('0.1', 'ether'), TradeType.EXACT_INPUT));
+        const currencyInStablePrice = currencyTrade.executionPrice.toSignificant(6);
 
-        const newToken = await Fetcher.fetchTokenData(ChainId.MAINNET, newTokenAddress, this.provider);
-        const pair     = await Fetcher.fetchPairData(this.currencyToken, newToken, this.provider);
+        const newToken = await Fetcher.fetchTokenData(ChainId.MAINNET, newTokenAddress, self.provider);
+        const pair     = await Fetcher.fetchPairData(self.currencyToken, newToken, self.provider);
 
-        const newTokenroute      = new Route([pair], this.currencyToken)
-        const newTokenTrade      = new Trade(newTokenroute, new TokenAmount(this.currencyToken, ethers.utils.parseUnits('0.1', 'ether').toString(), TradeType.EXACT_INPUT))
+        const newTokenroute      = new Route([pair], self.currencyToken)
+        const newTokenTrade      = new Trade(newTokenroute, new TokenAmount(self.currencyToken, ethers.utils.parseUnits('0.1', 'ether'), TradeType.EXACT_INPUT))
         const newTokenInCurrency = newTokenTrade.executionPrice.toSignificant(6);
 
         //**Process liquidity**//
@@ -71,7 +71,7 @@ class NewPairListener {
         let totalSupply = response.result;
         marketCap       = totalSupply * newTokenInCurrency * currencyInStablePrice;
 
-        return new ContractProcessedData(newToken, pair, marketCap, liquidity, sourceCode,);
+        return new ContractProcessedData(self.currencyToken, newToken, pair, marketCap, liquidity, sourceCode, self.providerAddress);
     }
 
     //Handles new contracts being created on pancake swap
@@ -87,12 +87,12 @@ class NewPairListener {
 
         //Order the new tokens created
         let tokenIn, tokenOut;
-        if(token0 === this.currencyTokenAddress) {
+        if(token0 === self.currencyTokenAddress) {
             tokenIn = token0; 
             tokenOut = token1;
         }
         
-        if(token1 == this.currencyTokenAddress) {
+        if(token1 == self.currencyTokenAddress) {
             tokenIn = token1; 
             tokenOut = token0;
         }
@@ -110,13 +110,12 @@ class NewPairListener {
 
     //Starts listening to pancake factory
     start() {
-
+        
         //Initialize
-        this.currencyToken  = await Fetcher.fetchTokenData(ChainId.MAINNET, currencyTokenAddress, this.provider);
-        let stableToken     = await Fetcher.fetchTokenData(ChainId.MAINNET, stableTokenAddress, this.provider);
-        let currencyPair    = await Fetcher.fetchPairData(stableToken, currencyToken, this.provider);
-        let curencyRoute    = new Route([currencyPair], this.WBNBToken)
-        this.currencyTrade  = new Trade(curencyRoute, new TokenAmount(this.currencyToken, ethers.utils.parseUnits('0.1', 'ether').toString(), TradeType.EXACT_INPUT));
+        this.currencyToken  = await Fetcher.fetchTokenData(ChainId.MAINNET, this.currencyTokenAddress, this.provider);
+        let stableToken     = await Fetcher.fetchTokenData(ChainId.MAINNET, this.stableTokenAddress, this.provider);
+        let currencyPair    = await Fetcher.fetchPairData(stableToken, this.currencyToken, this.provider);
+        this.curencyRoute    = new Route([currencyPair], this.WBNBToken)
 
         this.newTokenEvent = new event.EventEmitter();
 

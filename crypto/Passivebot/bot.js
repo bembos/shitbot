@@ -4,15 +4,18 @@ const { ChainId, Token, Fetcher, Route, Trade, TradeType, TokenAmount, Percent }
 
 //Services
 const tradeWindowService = require('../../services/tradeWindow');
+const logMessageService = require('../../services/logMessage');
+const transactionService = require('../../services/transaction');
 
 class Bot {
 
-    onNewtoken;
+    //Helper to use this inside a listener function
+    self = this;
 
     constructor(provider, router, botData, queue){
         this.provider = provider;
         this.router = router;
-        this.bot = botData;
+        this.bot = botData.bot;
         this.user = botData.user;
         this.generalConfCons = botData.generalConfCons;
         this.contractCodeCons = botData.contractCodeCons;
@@ -26,7 +29,7 @@ class Bot {
         if (this.validate(contractProcessedData)) {
             
             //Initialize data
-            const provider = this.provider
+            const provider = ethers.providers.WebSocketProvider(self.provider);;
             const wallet   =  ethers.Wallet(this.bot.walletPrivate);
             const account  = wallet.connect(provider);
 
@@ -34,33 +37,30 @@ class Bot {
             const newToken      = contractProcessedData.newToken;
             const pair          = contractProcessedData.pair;
 
-            //Create trade window
             //Create a trade window
-            tradeWindowService.create({
+            let tradeWindow = await tradeWindowService.create({
                 tokenAddress : newTokenAddress,
                 tokenName : newToken.name,
-                botId : bot.id
+                botId : self.bot.id
             })
 
             //Initialize trade
             const newTokenroute = new Route([pair], currencyToken)
-            const newTokenTrade = new Trade(newTokenroute, new TokenAmount(currencyToken, ethers.utils.parseUnits(this.bot.initialAmount, 'ether').toString(), TradeType.EXACT_INPUT))
+            const newTokenTrade = new Trade(newTokenroute, new TokenAmount(currencyToken, ethers.utils.parseUnits(self.bot.initialAmount, 'ether'), TradeType.EXACT_INPUT))
 
             //Define parameters for trading
             const slippageTolerance = new Percent(bot.slippage, '100') // 50 bips, or 0.50%
             const amountOutMin = newTokenTrade.minimumAmountOut(slippageTolerance).raw // needs to be converted to e.g. hex
             const path = [currencyTokenAddress, newTokenAddress]
-            const to = this.bot.walletAddress // should be a checksummed recipient address
+            const to = self.bot.walletAddress // should be a checksummed recipient address
             const deadline = Math.floor(Date.now() / 1000) + 60 * 20 // 20 minutes from the current Unix time
             const value = newTokenTrade.inputAmount.raw // // needs to be converted to e.g. hex
 
-
             //Define the router to perform the trade
             const router = new ethers.Contract(
-                this.router,
+                self.router,
                 [
                   'function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts);',
-                  'function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts);'
                 ],
                 account
               );
@@ -68,8 +68,6 @@ class Bot {
             //Perform the trade
             const tx = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
             const receipt = await tx.wait();
-
-            //Create log
 
             //Get account balance
             const router = new ethers.Contract(
@@ -80,32 +78,86 @@ class Bot {
                 account
             )
 
-            const currentTokens = await contract.balanceOf(this.bot.walletAddress);
+            const currentTokens = await contract.balanceOf(self.bot.walletAddress);
 
-            //Construct trade structure
-            const sellTokenRoute = new Route([pair], newTokenAddress)
-            const sellTokenTrade = new Trade(sellTokenRoute, new TokenAmount(newTokenAddress, ethers.utils.parseUnits(currentTokens, newToken.decimals).toString(), TradeType.EXACT_INPUT))
+            //Create log
+            await logMessageService.create({
+                content : "Bought " + currentTokens + " of " + newToken.name,
+                tradeWindowId : tradeWindow.id,
+            })
+
+            //Create transaction
+            await transactionService.create({
+                tokenGiven : currencyToken.name,
+                givenAmount : self.bot.initialAmount,
+                tokenReceived : newToken.name,
+                receivedAmount : currentTokens,
+                transactionStatusId : 1,
+                tradeWindowId : tradeWindow.id
+            })
 
             //Pass the trade to the job queue
-            
-
+            self.queue.add('sellSwap', {
+                currencyToken: currencyTokenAddress,
+                newTokenAddress: newTokenAddress,
+                tradeWindowId: tradeWindow.id,
+                multiplier: self.bot.autoMultiplier,
+                initialAmount: self.bot.initialAmount,
+                slippage: self.bot.slippage,
+                walletAddress: self.bot.walletAddress,
+                walletPrivate: self.bot.walletPrivate,
+                currentTokens: currentTokens,
+                routerAddress: self.router,
+                maxTime: self.bot.maxTime,
+                provider: providerAddress,
+            });
         }
     }
 
     //Function that tries to trade the token for a profit
-    async processSellOrder(tradeData) {
+    processSellOrder =  async function (job) {
 
-        let trade = tradeData.trade;
-        let multiplier = tradeData.multiplier;
-        let initialAmount = tradeData.initialAmount;
-        let slippage = tradeData.slippage;
-        let currencyTokenAddress = tradeData.currencyTokenAddress;
-        let newTokenAddress = tradeData.newTokenAddress;
-        let walletAddress = tradeData.walletAddress;
-        let router = tradeData.router;
-        let account = tradeData.account;
-        let currentTokens = tradeData.currentTokens;
-        let decimals = tradeData.decimals;
+        //Retrieve data
+        tradeData = job.data;
+
+        //Set Initial parameters (serializable)
+        const currencyTokenAddress = tradeData.currencyToken;
+        const newTokenAddress = tradeData.newTokenAddress;
+
+        const tradeWindowId = tradeData.tradeWindowId;
+        const multiplier = tradeData.multiplier;
+        const initialAmount = tradeData.initialAmount;
+        const slippage = tradeData.slippage;
+        const walletAddress = tradeData.walletAddress;
+        const walletPrivate = tradeData.walletPrivate;
+        const currentTokens = tradeData.currentTokens;
+        const routerAddress = tradeData.routerAddress;
+        const maxTime = tradeData.maxTime;
+
+        //Initialize required parameters
+        const provider = ethers.providers.WebSocketProvider(tradeData.provider)
+        const wallet   = ethers.Wallet(walletPrivate);
+        const account  = wallet.connect(provider);
+
+        const router = new ethers.Contract(
+            routerAddress,
+            [
+              'function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts);'
+            ],
+            account
+        );
+        
+        //Fetch again token data
+        const newtoken      = await Fetcher.fetchTokenData(ChainId.MAINNET, newTokenAddress, provider);
+        const currencyToken = await Fetcher.fetchTokenData(ChainId.MAINNET, currencyTokenAddress, provider);
+        const pair          = await Fetcher.fetchPairData(currencyToken, newToken, provider);
+
+        const decimals = newtoken.decimals;
+
+        const sellRoute = new Route([pair], newToken)
+        const trade = new Trade(sellRoute, new TokenAmount(newToken, ethers.utils.parseUnits(currentTokens, decimals), TradeType.EXACT_INPUT))
+
+        //Create a timeout for the sell timer
 
         //Send a request for the price every 5 seconds
         let sellTimer = setInterval(() => {
@@ -118,10 +170,13 @@ class Bot {
                 //Approve the token
                 let abi = ["function approve(address _spender, uint256 _value) public returns (bool success)"];
                 let contract = new ethers.Contract(newTokenAddress, abi, account);
-                let aproveResponse = await contract.approve(this.router, ethers.utils.parseUnits(currentTokens, decimals));
-                console.log(JSON.stringify(aproveResponse));
+                let aproveResponse = await contract.approve(router, ethers.utils.parseUnits(currentTokens, decimals));
 
                 //Create log
+                await logMessageService.create({
+                    content : "Trading of token " + newToken.name + " was approved",
+                    tradeWindowId : tradeWindowId,
+                })
 
                 //Set up parameters
                 const slippageTolerance = new Percent(slippage, '100') // 50 bips, or 0.50%
@@ -135,14 +190,51 @@ class Bot {
                 const tx = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
                 const receipt = await tx.wait();
 
-                //Create Log
+                //Create log
+                await logMessageService.create({
+                    content : "Bought " + multiplier * initialAmount + " of " + currencyToken.name,
+                    tradeWindowId : tradeWindowId,
+                })
 
+                //Create transaction
+                await transactionService.create({
+                    tokenGiven : newToken.name,
+                    givenAmount : currentTokens,
+                    tokenReceived : currencyToken.name,
+                    receivedAmount : multiplier * initialAmount,
+                    transactionStatusId : 2,
+                    tradeWindowId : tradeWindowId
+                })
 
-                //End interval
+                //End interval and  timer
                 clearInterval(sellTimer)
+                clearTimeout(timeout)
             }
 
         }, 5000)
+
+        //Sets a timeout function given the user's configuration
+        let timeout = setTimeout(() => { 
+
+            //Create log
+            await logMessageService.create({
+                content : "Bought " + currentTokens + " of " + newToken.name,
+                tradeWindowId : tradeWindow.id,
+            })
+
+            //Create transaction
+            await transactionService.create({
+                tokenGiven : "Failed",
+                givenAmount : 0,
+                tokenReceived : "Failed",
+                receivedAmount : 0,
+                transactionStatusId : 3,
+                tradeWindowId : tradeWindow.id
+            })
+
+            clearInterval(sellTimer)
+        
+        }, maxTime * 1000)
     }
 
     //Validates the new token received based on user's rules

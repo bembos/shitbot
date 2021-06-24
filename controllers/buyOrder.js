@@ -40,7 +40,7 @@ exports.showEdit = async (req, res, next) => {
 exports.edit = async (req, res, next) => {
     
     //Create new instance
-    await buyOrderService.update(req);
+    await buyOrderService.update(req.body);
     
     res.redirect('/buy-orders');
 };
