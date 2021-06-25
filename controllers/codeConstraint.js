@@ -24,6 +24,8 @@ exports.create = async (req, res, next) => {
     //Create new instance
     await codeConstraintService.create(req);
     
+    req.flash('sucess_msg', 'Successfully Added'); 
+
     res.redirect('/constraints/contract-code');
 };
 
@@ -44,6 +46,8 @@ exports.edit = async (req, res, next) => {
     //Create new instance
     await codeConstraintService.update(req);
     
+    req.flash('sucess_msg', 'Successfully Updated'); 
+
     res.redirect('/constraints/contract-code');
 };
 

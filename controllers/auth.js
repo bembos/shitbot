@@ -15,7 +15,9 @@ exports.authenticate = (req, res, next) => {
 
 exports.logout = (req, res, next) => {
   req.logout();
+
   req.flash('success_msg','Now logged out');
+  
   res.redirect('/login');
 };
 

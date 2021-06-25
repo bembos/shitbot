@@ -7,6 +7,7 @@
         </div>
       </div>
       <div class="content-body"><!-- Basic Tables start -->
+        <%- include ('../../layout/partials/messages') %>
         <div class="row">
         <div class="col-12">
             <div class="card">
@@ -32,6 +33,7 @@
                                     <tr>
                                         <th>Label</th>
                                         <th>Short Desc.</th>
+                                        <th>Include/Avoid</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -40,6 +42,7 @@
                                     <tr>
                                         <td><%= constraint.label %></td>
                                         <td><%= constraint.desc %></td>
+                                        <td><%= constraint.avoid ? 'Avoid' : 'Include'  %></td>
                                         <td>
                                             <div class="row">
                                                 <form action="/constraints/contract-code/edit/<%= constraint.id %>" enctype="application/x-www-form-urlencoded" method="GET">

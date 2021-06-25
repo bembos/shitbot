@@ -36,7 +36,7 @@ require('./config/passport')(passport);
 //Flash messages stuff
 var flash = require('connect-flash');
 app.use(flash({ sessionKeyName: 'flashMessage' }));
-app.use((req,res,next)=> {
+app.use((req, res, next)=> {
     res.locals.success_msg = req.flash('success_msg');
     res.locals.error_msg = req.flash('error_msg');
     res.locals.error  = req.flash('error'); 

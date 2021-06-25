@@ -28,7 +28,7 @@ exports.configureBot = async (req, res, next) => {
 
   req.flash('success_msg' , 'Updated Correctly');
 
-  res.render('bot', {bot: bot});
+  res.redirect('/bot');
 };
 
 //Starts the bot
