@@ -1,5 +1,4 @@
 const { PrismaClient } = require('@prisma/client')
-const PancakeSwapManager = require('../crypto/pancakeSwapManager/pancakeSwapManager')
 const prisma = new PrismaClient()
 
 //Pancake swap manager
@@ -68,13 +67,13 @@ exports.retrieveUserWithBot = (user) => {
  * Starts the passive bot functionality
  * @param {request} req 
  */
-exports.start = (req) => {
+exports.start = async (req) => {
 
     let user = req.user;
     let passiveBotManager = PancakeSwapManager.getPassiveBotManager();
 
     //Retrieve user data
-    user = prisma.user.findUnique({
+    user = await prisma.user.findUnique({
         where : {
             id: user.id
         },
@@ -99,19 +98,29 @@ exports.start = (req) => {
         generalConfCons: generalConstraints,
         contractCodeCons : contractCodeConstaints
     });
+
+    //Set bot  to enabled
+    await prisma.bot.update({
+        where : {
+            id: user.bot.id
+        },
+        data : {
+            enabled : true,
+        }
+    })
 }
 
 /**
  * Stop the passive bot functionality
  * @param {request} req 
  */
-exports.stop = (req) => {
+exports.stop = async (req) => {
 
     let user = req.user;
     let passiveBotManager = PancakeSwapManager.getPassiveBotManager();
 
     //Retrieve user data
-    user = prisma.user.findUnique({
+    user = await prisma.user.findUnique({
         where : {
             id: user.id
         },
@@ -124,4 +133,14 @@ exports.stop = (req) => {
     passiveBotManager.stop({
         bot : user.bot
     });
+
+    //Update the bot
+    await prisma.bot.update({
+        where : {
+            id: user.bot.id
+        },
+        data : {
+            enabled : false,
+        }
+    })
 }

@@ -17,12 +17,12 @@ class Bot{
     }
 
     //Function used to listen
-    onMint = function (sender, tokenIn, tokenOut){
+    onMint = async function (sender, tokenInAddress, tokenOutAddress){
 
         //Perform trade
         const provider     = new ethers.providers.WebSocketProvider(self.provider);
-        const tokenIn      = await Fetcher.fetchTokenData(ChainId.MAINNET, tokenIn, provider);
-        const tokenOut     = await Fetcher.fetchTokenData(ChainId.MAINNET, tokenOut, provider);
+        const tokenIn      = await Fetcher.fetchTokenData(ChainId.MAINNET, tokenInAddress, provider);
+        const tokenOut     = await Fetcher.fetchTokenData(ChainId.MAINNET, tokenOutAddress, provider);
         const pair         = await Fetcher.fetchPairData(tokenIn, tokenOut, provider);
 
         const decimals = tokenIn.decimals;
@@ -46,7 +46,6 @@ class Bot{
             ],
             self.account
           );
-
 
         //Perform trade
         const tx = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});

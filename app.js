@@ -1,7 +1,9 @@
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
-const { env } = require('process');
+
+//Set up env
+require('dotenv').config()
 
 //Set up the app
 var app = express();
@@ -53,9 +55,9 @@ app.use(methodOverride(overrideHelper.methodInBody))
 //Redis stuff
 const Redis = require('ioredis');
 const redis = new Redis({
-    host: env('REDIS_HOST'),
-    port: env('REDIS_PORT'),
-    password: env('REDIS_PASSWORD'),
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+    password: process.env.REDIS_PASSWORD,
 	limiter: {
 		max: 100,
 		duration: 10000
@@ -67,22 +69,24 @@ const PancakeSwapManager = require('./crypto/pancakeSwapManager/pancakeSwapManag
 const pancakeSwapManager = new PancakeSwapManager();
 pancakeSwapManager.initialize(redis)
 
-//Routes
-var indexRouter = require('./routes/index');
-
 // view engine setup
 app.set('view engine', 'ejs');
 app.use(expressLayouts);
 app.set('layout', './layout/layout.ejs')
 
-
+const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 //Middleware to get current url
 const urlHelper = require('./middleware/path');
 
+//Routes
+var indexRouter = require('./routes/index');
+var errorRouter = require('./routes/error');
+
 app.use('/', urlHelper.currentUrl, indexRouter);
+app.use(errorRouter);
 
 app.listen(3000);
 

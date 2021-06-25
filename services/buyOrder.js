@@ -29,7 +29,7 @@ exports.retrieveUserWithBuyOrders = (user) => {
  * @param {Data} req 
  * @returns 
  */
-exports.create = (req) => {
+exports.create = async (req) => {
 
     //Creates database row
     buyOrder = await prisma.buyOrder.create({
@@ -113,7 +113,7 @@ exports.update = (fields) => {
  * @param {Id} buyOrderId 
  * @returns 
  */
-exports.delete = (buyOrderId) => {
+exports.delete = async (buyOrderId) => {
 
     let buyOrder = await this.find(buyOrderId)
 

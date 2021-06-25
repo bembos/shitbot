@@ -18,10 +18,18 @@
                   </div>
                   <div class="card-block">
                       <div class="card-body">
-                          <p class="card-subtitle">Bot is currently offline</p>
-                          <form action="/bot/start-up" method="POST">
-                            <button type="submit" class="btn mr-1 mb-1 btn-success btn-lg">Start</button>
-                          </form>
+                          <% if (!bot.enabled) { %> 
+                            <p class="card-subtitle">Bot is currently offline</p>
+                            <form action="/bot/start" method="POST">
+                              <button type="submit" class="btn mr-1 mb-1 btn-success btn-lg">Start</button>
+                            </form>
+                          <% } %>
+                          <% if (bot.enabled) { %> 
+                            <p class="card-subtitle">Bot is currently online</p>
+                            <form action="/bot/stop" method="POST">
+                              <button type="submit" class="btn mr-1 mb-1 btn-warning btn-lg">Stop</button>
+                            </form>
+                          <% } %>
                       </div>
                   </div>
               </div>
@@ -58,7 +66,7 @@
 
                             <h5 class="mt-2">Slippage</h5>
                             <fieldset class="form-group">
-                              <input type="number" class="form-control" id="placeholderInput" name="autoMultiplier" value="<%= bot.slippage %>">
+                              <input type="number" class="form-control" id="placeholderInput" name="slippage" value="<%= bot.slippage %>">
                             </fieldset>
 
                             <h5 class="mt-2">Max Number of Current Trades</h5>

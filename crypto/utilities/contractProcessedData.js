@@ -1,4 +1,4 @@
-export class ContractProcessedData {
+class ContractProcessedData {
 
     constructor(currencyToken, newToken, pair, marketCap, liquidity, sourceCode) {
         this.currencyToken = currencyToken;
@@ -9,3 +9,5 @@ export class ContractProcessedData {
         this.sourceCode = sourceCode;
     }
 } 
+
+module.exports = ContractProcessedData;

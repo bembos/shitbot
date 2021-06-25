@@ -16,11 +16,11 @@ class BotManager {
     }
 
     //Creates a new bot class, new queue and saves the relation
-    start(botData) {
+    async start(botData) {
 
         //If there are no bots
         if (this.activeBots.length == 0) {
-            this.newPairEventEmitter.start();
+            await this.newPairEventEmitter.start();
         }
 
         //Create a new queue
@@ -34,11 +34,18 @@ class BotManager {
             bot.processSellOrder(job);
         });
 
+        //Set up current number of transactions open
+        transactions = { number : 0 }
+
         //Listen to pair created event
-        this.newPairEventEmitter.newTokenEvent.listen('newToken', bot.onNewToken);
+        this.newPairEventEmitter.newTokenEvent.listen('newToken', (tokenIn, tokenOut, data) => { 
+            setImmediate(() => {
+                bot.onNewToken(tokenIn, tokenOut, data, transactions);
+            })
+        });
 
         //Saves relationship
-        this.activeBots[botData.bot.id] = {'bot' : bot, 'queue': queue};
+        this.activeBots[botData.bot.id] = {'bot' : bot, 'queue': queue, 'transactions' : transactions};
     }
 
     //Retrieves botlistener instance from active bots array, detaches event and deletes queue
@@ -51,10 +58,7 @@ class BotManager {
         this.newPairEventEmitter.newTokenEvent.removeListener('newToken', bot.onNewToken);
         
         //Clear queue
-        queue.empty();
-
-        delete queue;
-        delete bot;
+        queue.obliterate()
 
         delete this.activeBots[botData.bot.id];
 

@@ -11,7 +11,7 @@ const { env } = require('process');
 const axios = require('axios');
 
 //Utilities
-const { ContractProcessedData} = require('../utilities/contractProcessedData');
+const ContractProcessedData = require('../utilities/contractProcessedData');
 
 class NewPairListener {
 
@@ -27,7 +27,7 @@ class NewPairListener {
         this.stableTokenAddress = stableTokenAddress;
         this.providerAddress = providerAddress
         this.factoryAddress = factoryAddress;
-        this.provider =  ethers.providers.WebSocketProvider(providerAddress);;
+        this.provider =  new ethers.providers.WebSocketProvider(providerAddress);;
     }
 
     async processData(newTokenAddress) {
@@ -37,12 +37,15 @@ class NewPairListener {
         let liquidity = 0;
 
         //Retrieve source code if verified using bscscan
-        let response = await axios.get(`https://api.bscscan.com/api?module=contract&action=getsourcecode&address=${newTokenAddress}&apikey=${env('BSCSCAN_APIKEY')}`);
+        let response = await axios.get(`https://api.bscscan.com/api?module=contract&action=getsourcecode&address=${newTokenAddress}&apikey=${process.env.BSCSCAN_APIKEY}`);
 
-        //If there was any problem with the request or the source code isn't verified return null
-        if (response.status == "0" || response,result[0].sourceCode == "")  return null;
+        //If there was any problem with the request or the source code isn't verified or maximum amount of request reached return null
+        if (response.status == "0" || response,result[0].sourceCode == "")  {
+            console.log(response);
+            return null;
+        }
         
-        sourcecode = response.result[0].sourceCode;
+        sourceCode = response.result[0].sourceCode;
         
         //If Basic check pass initialze data
         const currencyTrade  = new Trade(self.curencyRoute, new TokenAmount(self.currencyToken, ethers.utils.parseUnits('0.1', 'ether'), TradeType.EXACT_INPUT));
@@ -67,11 +70,21 @@ class NewPairListener {
         liquidity = newTokenReserveTotal + currencyReserveTotal;
 
         //Process market cap
-        let response    = await axios.get(`https://api.bscscan.com/api?module=stats&action=tokensupply&contractaddress=${newTokenAddress}&apikey=${env('BSCSCAN_APIKEY')}`);
+        response    = await axios.get(`https://api.bscscan.com/api?module=stats&action=tokensupply&contractaddress=${newTokenAddress}&apikey=${process.env.BSCSCAN_APIKEY}`);
+
+        //If there was any problem with the request or the source code isn't verified or maximum amount of request reached return null
+        if (response.status == "0" || response,result[0].sourceCode == "")  {
+            console.log(response);
+            return null;
+        }
+
         let totalSupply = response.result;
         marketCap       = totalSupply * newTokenInCurrency * currencyInStablePrice;
 
-        return new ContractProcessedData(self.currencyToken, newToken, pair, marketCap, liquidity, sourceCode, self.providerAddress);
+        //TESTING CONSOLE LOG DELETE
+        console.log(new ContractProcessedData(self.currencyToken, newToken, pair, marketCap, liquidity, sourceCode, self.providerAddress));
+
+        //return new ContractProcessedData(self.currencyToken, newToken, pair, marketCap, liquidity, sourceCode, self.providerAddress);
     }
 
     //Handles new contracts being created on pancake swap
@@ -109,7 +122,7 @@ class NewPairListener {
     }
 
     //Starts listening to pancake factory
-    start() {
+    async start() {
         
         //Initialize
         this.currencyToken  = await Fetcher.fetchTokenData(ChainId.MAINNET, this.currencyTokenAddress, this.provider);
@@ -118,6 +131,7 @@ class NewPairListener {
         this.curencyRoute    = new Route([currencyPair], this.WBNBToken)
 
         this.newTokenEvent = new event.EventEmitter();
+        this.newTokenEvent.setMaxListeners(0);
 
         //Set up a contract with the pancake swap factory
         factory = new ethers.Contract(

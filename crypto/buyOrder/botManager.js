@@ -28,8 +28,6 @@ class BotManager {
 
         bot.stop();
 
-        delete bot;
-
         delete this.activeBots[botData.buyOrder.id];
 
     }

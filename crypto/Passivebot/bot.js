@@ -23,14 +23,20 @@ class Bot {
     }
     
     //Function called when a new token is given to the bot
-    onNewToken = function (currencyTokenAddress, newTokenAddress, contractProcessedData) {
+    onNewToken = async function (currencyTokenAddress, newTokenAddress, contractProcessedData, transactions) {
+
+        //Check number of trades
+        if (transactions.number > bot.maxTransaction) return;
 
         //If it is successfuly validated
         if (this.validate(contractProcessedData)) {
+
+            //Increase a number of transactions
+            transactions.number = transactions.number + 1;
             
             //Initialize data
-            const provider = ethers.providers.WebSocketProvider(self.provider);;
-            const wallet   =  ethers.Wallet(this.bot.walletPrivate);
+            const provider = new ethers.providers.WebSocketProvider(self.provider);;
+            const wallet   = ethers.Wallet(this.bot.walletPrivate);
             const account  = wallet.connect(provider);
 
             const currencyToken = contractProcessedData.currencyToken;
@@ -69,8 +75,25 @@ class Bot {
             const tx = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
             const receipt = await tx.wait();
 
+            //If buy failed
+            if (receipt.status == 0) {
+
+                //TESTING STUFF
+                console.log(receipt);
+
+                await logMessageService.create({
+                    content : "Failed to buy " + newToken.address,
+                    tradeWindowId : tradeWindow.id,
+                })
+
+                //reduce number of transactions
+                transactions.number = transaction.number - 1;
+
+                return;
+            }
+
             //Get account balance
-            const router = new ethers.Contract(
+            router = new ethers.Contract(
                 newTokenAddress,
                 [
                     "function balanceOf(address owner) view returns (uint256)",
@@ -110,6 +133,7 @@ class Bot {
                 routerAddress: self.router,
                 maxTime: self.bot.maxTime,
                 provider: providerAddress,
+                transactions : transactions
             });
         }
     }
@@ -160,7 +184,7 @@ class Bot {
         //Create a timeout for the sell timer
 
         //Send a request for the price every 5 seconds
-        let sellTimer = setInterval(() => {
+        let sellTimer = setInterval(async () => {
             //Check current price
             const currencyIfSwapped = trade.executionPrice.toSignificant(6);
 
@@ -170,7 +194,7 @@ class Bot {
                 //Approve the token
                 let abi = ["function approve(address _spender, uint256 _value) public returns (bool success)"];
                 let contract = new ethers.Contract(newTokenAddress, abi, account);
-                let aproveResponse = await contract.approve(router, ethers.utils.parseUnits(currentTokens, decimals));
+                await contract.approve(router, ethers.utils.parseUnits(currentTokens, decimals));
 
                 //Create log
                 await logMessageService.create({
@@ -190,6 +214,17 @@ class Bot {
                 const tx = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
                 const receipt = await tx.wait();
 
+                if (receipt.status == 0) {
+
+                    //Create log
+                    await logMessageService.create({
+                        content : "Failed to swap back " + newTokenAddress + " to currency token (bsc = bnb)",
+                        tradeWindowId : tradeWindowId,
+                    })
+
+                    return;
+                }
+
                 //Create log
                 await logMessageService.create({
                     content : "Bought " + multiplier * initialAmount + " of " + currencyToken.name,
@@ -206,6 +241,9 @@ class Bot {
                     tradeWindowId : tradeWindowId
                 })
 
+                //Reduce number of transactions
+                transactions.number = transactions.number - 1;
+
                 //End interval and  timer
                 clearInterval(sellTimer)
                 clearTimeout(timeout)
@@ -214,7 +252,7 @@ class Bot {
         }, 5000)
 
         //Sets a timeout function given the user's configuration
-        let timeout = setTimeout(() => { 
+        let timeout = setTimeout(async () => { 
 
             //Create log
             await logMessageService.create({
@@ -231,6 +269,9 @@ class Bot {
                 transactionStatusId : 3,
                 tradeWindowId : tradeWindow.id
             })
+
+            //Reduce number of transactions
+            transactions.number = transactions.number - 1;
 
             clearInterval(sellTimer)
         
