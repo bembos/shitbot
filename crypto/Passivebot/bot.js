@@ -32,14 +32,14 @@ class Bot {
         if (transactions.number > bot.maxTransaction) return;
 
         //If it is successfuly validated
-        if (await this.validate(contractProcessedData, tokenTracking, liquidityTracking)) {
+        if (await self.validate(contractProcessedData, tokenTracking, liquidityTracking)) {
 
             //Increase a number of transactions
             transactions.number = transactions.number + 1;
             
             //Initialize data
             const provider = new ethers.providers.WebSocketProvider(self.provider);;
-            const wallet   = ethers.Wallet(this.bot.walletPrivate);
+            const wallet   = ethers.Wallet(self.bot.walletPrivate);
             const account  = wallet.connect(provider);
 
             const currencyToken = contractProcessedData.currencyToken;
@@ -285,28 +285,69 @@ class Bot {
     async validate(contractProcessedData, tokenTracking, liquidityTracking) {
 
         //Validate Time based constraints
-        if (this.generalConfCons.timeBased) {
+        if (self.generalConfCons.timeBased) {
 
+            //Sleep the required amount of time
             await sleepHelper.sleep(generalConfCons.timeForChecks * 1000);
 
-            //Check configurations using tracking made
+            //Check owner renounced
+            if (self.generalConfCons.ownerRenounced) {
+
+                //Perform owner checkup
+                let tokenContract = new ethers.Contract(
+                    contractProcessedData.newtoken.address,
+                    ['function owner() public view virtual returns (address)'],
+                    this.provider
+                );
+
+                //Retrieve owner and compare to dead address
+                let owner = await tokenContract.owner();
+                
+                if (owner != "0x0000000000000000000000000000000000000000") return false;
+            }
+
+            //Check for maxLiqTokInAddress
+            if (self.generalConfCons.maxLiqTokInAddress != 0 && liquidityTracking.holders.length) {
+                let maxLiquidityHolder = liquidityTracking.holders[0];
+
+                if (maxLiquidityHolder.value > self.generalConfCons.maxLiqTokInAddress) return false;
+            }
+
+            //Check for maxTokInAddress
+            if (self.generalConfCons.maxTokInAddress != 0 && tokenTracking.holders.length) {
+                let maxHolder = tokenTracking.holders[0];
+
+                if (maxHolder.value > self.generalConfCons.maxTokInAddress) return false;
+            }
+
+            //Check for minNumberOfTxs
+            if (self.generalConfCons.minNumberOfTxs != 0) {
+
+                if (self.generalConfCons.minNumberOfTxs > tokenTracking.numberTxs) return false;
+            }
+
+            //Check for minNumberOfHolders
+            if (self.generalConfCons.minNumberOfHolders != 0) {
+
+                if (self.generalConfCons.minNumberOfHolders > tokenTracking.holders.length) return false;
+            }
         }
 
         //1. Market cap
-        if (this.generalConfCons.marketCap) {
+        if (self.generalConfCons.marketCap) {
 
             let contractMarketCap = contractProcessedData.marketCap;
 
-            if (contractMarketCap < this.generalConfCons.minCap || contractMarketCap > this.generalConfCons.maxCap) return false;
+            if (contractMarketCap < self.generalConfCons.minCap || contractMarketCap > self.generalConfCons.maxCap) return false;
             
         }
 
         //2. Liquidity
-        if (this.generalConfCons.liquidity) {
+        if (self.generalConfCons.liquidity) {
 
             let contractLiquidity = contractProcessedData.liquidity;
 
-            if (contractLiquidity < this.generalConfCons.minLiq || contractLiquidity > this.generalConfCons.maxLiq) return false;
+            if (contractLiquidity < self.generalConfCons.minLiq || contractLiquidity > self.generalConfCons.maxLiq) return false;
             
         }
 
@@ -314,7 +355,7 @@ class Bot {
         let contractCode = contractProcessedData.sourceCode;
 
         //Iterate over all contract constraints to check in code
-        for (let cons of this.contractCodeCons) {
+        for (let cons of self.contractCodeCons) {
 
             includesCode = contractCode.includes(cons.sourceCode);
 

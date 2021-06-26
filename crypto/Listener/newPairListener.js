@@ -77,7 +77,33 @@ class NewPairListener {
             this.provider
         );
 
-        let owner = await tokenContract.owner();
+        let owner;
+        let totalLiquidityTokens;
+        let liquidityBurned;
+        let tokenTotalSupply;
+        let tokenBurned;
+        let liquidityOwnerBalance;
+        let tokenOwnerBalance;
+        
+        //Perform calls to the contract. If the contract doesn't have one of the functions its probably a scam. Log the errors for testing
+        try {
+            //Owners
+            owner = await tokenContract.owner();  
+            //Get total liquidity tokens
+            totalLiquidityTokens = await liquidityContract.totalSupply().toNumber();
+            liquidityBurned      = await liquidityContract.balanceOf(burnAddress).toNumber();   
+            //Check if owner has liquidity tokens
+            liquidityOwnerBalance = await liquidityContract.getBalanceOf(owner);
+            //Get total tokens
+            tokenTotalSupply = await tokenContract.totalSupply().toNumber();
+            tokenBurned      = await tokenContract.balanceOf(burnAddress).toNumber();
+            //Check if owner has tokens
+            tokenOwnerBalance = await tokenContract.getBalanceOf(owner);
+
+        } catch (error) {
+            console.log(error);
+            return null;
+        }
 
         //**Process liquidity**//
         
@@ -92,38 +118,24 @@ class NewPairListener {
 
         console.log("liquidity: " + liquidity);
 
-        //Get total liquidity tokens
-        let totalLiquidityTokens = await liquidityContract.totalSupply().toNumber();
-        let burned               = await liquidityContract.balanceOf(burnAddress).toNumber();
-        
         totalLiquidityTokens         = totalLiquidityTokens - burned;
-        liquidityHolders.totalSupply = totalLiquidityTokens;
-
-        //Check if owner has liquidity tokens
-        let ownerBalance = await liquidityContract.getBalanceOf(owner);
+        liquidityHolders.totalSupply = totalLiquidityTokens; 
 
         //If the owner has balance add it as a holder
-        if (ownerBalance) {
-            liquidityHolders.holders.push({address: owner, value: ownerBalance});
+        if (liquidityOwnerBalance) {
+            liquidityHolders.holders.push({address: owner, value: liquidityOwnerBalance});
         }
 
         //**Process marketcap *//
+        tokenTotalSupply     = tokenTotalSupply - tokenBurned;
+        marketCap                = tokenTotalSupply * currencyInNewToken * currencyInStablePrice;
+        tokenHolders.totalSupply = tokenTotalSupply
+
+        console.log("marketCap: " + marketCap, "total supply: " + tokenTotalSupply)
         
-        let totalSupply = await tokenContract.totalSupply().toNumber();
-        let burned      = await tokenContract.balanceOf(burnAddress).toNumber();
-        
-        let totalSupply          = totalSupply - burned;
-        marketCap                = totalSupply * currencyInNewToken * currencyInStablePrice;
-        tokenHolders.totalSupply = totalSupply
-
-        console.log("marketCap: " + marketCap, "total supply: " + totalSupply);
-
-        //Check if owner has liquidity tokens
-        ownerBalance = await tokenContract.getBalanceOf(owner);
-
         //If the owner has balance add it as a holder
-        if (ownerBalance) {
-            tokenHolders.holders.push({address: owner, value: ownerBalance});
+        if (tokenOwnerBalance) {
+            tokenHolders.holders.push({address: owner, value: tokenOwnerBalance});
         }
 
         return [new ContractProcessedData(self.currencyToken, newToken, pair, marketCap, liquidity, sourceCode, self.providerAddress)];
@@ -187,6 +199,9 @@ class NewPairListener {
                     }
                 });
             }
+
+            //Sort in descending order
+            tokenHolders.holders.sort((holderA, holderB) => holderB.value - holderA.value);
         });
 
         //Set up liquidity transfer listener
@@ -246,6 +261,9 @@ class NewPairListener {
             }
         });
 
+        //Sort both arrays
+        liquidityHolders.holders.sort((holderA, holderB) => holderB.value - holderA.value);
+
         //After 10 minutes stop listening to transfer events
         setTimeout(() => {
             tokenRouter.removeAllListeners();
@@ -291,7 +309,6 @@ class NewPairListener {
         let tokenHolders = {
             address : tokenOut,
             numberTxs : 0,
-            numberHolders : 0,
             totalSupply : totalSupplyToken,
             holders : []
         }
