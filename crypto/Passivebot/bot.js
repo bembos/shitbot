@@ -7,6 +7,9 @@ const tradeWindowService = require('../../services/tradeWindow');
 const logMessageService = require('../../services/logMessage');
 const transactionService = require('../../services/transaction');
 
+//Utilities
+const sleepHelper = require('../utilities/sleep');
+
 class Bot {
 
     //Helper to use this inside a listener function
@@ -23,13 +26,13 @@ class Bot {
     }
     
     //Function called when a new token is given to the bot
-    onNewToken = async function (currencyTokenAddress, newTokenAddress, contractProcessedData, transactions) {
+    onNewToken = async function (contractProcessedData, transactions, tokenTracking, liquidityTracking) {
 
         //Check number of trades
         if (transactions.number > bot.maxTransaction) return;
 
         //If it is successfuly validated
-        if (this.validate(contractProcessedData)) {
+        if (await this.validate(contractProcessedData, tokenTracking, liquidityTracking)) {
 
             //Increase a number of transactions
             transactions.number = transactions.number + 1;
@@ -45,7 +48,7 @@ class Bot {
 
             //Create a trade window
             let tradeWindow = await tradeWindowService.create({
-                tokenAddress : newTokenAddress,
+                tokenAddress : newToken.address,
                 tokenName : newToken.name,
                 botId : self.bot.id
             })
@@ -57,7 +60,7 @@ class Bot {
             //Define parameters for trading
             const slippageTolerance = new Percent(bot.slippage, '100') // 50 bips, or 0.50%
             const amountOutMin = newTokenTrade.minimumAmountOut(slippageTolerance).raw // needs to be converted to e.g. hex
-            const path = [currencyTokenAddress, newTokenAddress]
+            const path = [currencyToken.address, newToken.address]
             const to = self.bot.walletAddress // should be a checksummed recipient address
             const deadline = Math.floor(Date.now() / 1000) + 60 * 20 // 20 minutes from the current Unix time
             const value = newTokenTrade.inputAmount.raw // // needs to be converted to e.g. hex
@@ -94,7 +97,7 @@ class Bot {
 
             //Get account balance
             router = new ethers.Contract(
-                newTokenAddress,
+                newToken.address,
                 [
                     "function balanceOf(address owner) view returns (uint256)",
                 ],
@@ -121,8 +124,8 @@ class Bot {
 
             //Pass the trade to the job queue
             self.queue.add('sellSwap', {
-                currencyToken: currencyTokenAddress,
-                newTokenAddress: newTokenAddress,
+                currencyToken: currencyToken.address,
+                newTokenAdress: newToken.address,
                 tradeWindowId: tradeWindow.id,
                 multiplier: self.bot.autoMultiplier,
                 initialAmount: self.bot.initialAmount,
@@ -279,9 +282,15 @@ class Bot {
     }
 
     //Validates the new token received based on user's rules
-    validate(contractProcessedData) {
+    async validate(contractProcessedData, tokenTracking, liquidityTracking) {
 
-        //Validate General Configuration Contraints
+        //Validate Time based constraints
+        if (this.generalConfCons.timeBased) {
+
+            await sleepHelper.sleep(generalConfCons.timeForChecks * 1000);
+
+            //Check configurations using tracking made
+        }
 
         //1. Market cap
         if (this.generalConfCons.marketCap) {

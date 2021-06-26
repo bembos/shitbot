@@ -19,12 +19,7 @@
                                 <div class="card-body">
                                     <form action="constraints/general" method="POST">
                                         <input type="hidden" value="<%= general.id %>" name="general">
-                                        <!--
-                                        <h5 class="mt-2">Owner Renounced</h5>
-                                        <fieldset class="form-group">
-                                        <input type="checkbox" name="ownerRenounced" <% if (general.ownerRenounced) { %> checked <% } %>>
-                                        </fieldset>
-                                        -->
+                          
                                         <h5 class="mt-2">Use Market Cap</h5>
                                         <fieldset class="form-group">
                                         <input type="checkbox"  name="marketCap" <% if (general.marketCap) { %> checked <% } %> >
@@ -50,12 +45,44 @@
                                             <label for="maxLiquidity">Max:</label>
                                             <input type="number" class="form-control" id="maxLiquidity"name="minLiq" value="<%= general.minLiq %>">
                                         </fieldset>
-                                        <!-- 
-                                        <h5 class="mt-2">Liquidity Pool Locked</h5>
+
+                                        <hr>
+
+                                        <h5 class="mt-2">Enable Time Based Configuration (If value is 0, the conf is ignored)</h5>
                                         <fieldset class="form-group">
-                                        <input type="checkbox"  name="locked" <% if (general.lockedLiquidity) { %> checked <% } %> >
+                                        <input type="checkbox"  name="timeBased" <% if (general.timeBased) { %> checked <% } %> >
                                         </fieldset>
-                                        -->
+
+                                        <h5 class="mt-2">Time Required for Checks (sec)</h5>
+                                        <fieldset class="form-group">
+                                        <input type="number" class="form-control" name="timeForChecks" value="<%= general.timeForChecks %>">
+                                        </fieldset>
+
+                                        <h5 class="mt-2">Owner Renounced</h5>
+                                        <fieldset class="form-group">
+                                        <input type="checkbox" name="ownerRenounced" <% if (general.ownerRenounced) { %> checked <% } %>>
+                                        </fieldset>
+
+                                        <h5 class="mt-2">Max Liquidity in Token Address (%)</h5>
+                                        <fieldset class="form-group">
+                                        <input type="number" class="form-control" name="maxLiqTokInAddress" value="<%= general.maxLiqTokInAddress %>">
+                                        </fieldset>
+                                        
+                                        <h5 class="mt-2">Max Tokens Address (%)</h5>
+                                        <fieldset class="form-group">
+                                        <input type="number" class="form-control" name="maxTokInAddress" value="<%= general.maxTokInAddress %>">
+                                        </fieldset>
+
+                                        <h5 class="mt-2">Min Number of Transactions</h5>
+                                        <fieldset class="form-group">
+                                        <input type="number" class="form-control" name="minNumberOfTxs" value="<%= general.minNumberOfTxs %>">
+                                        </fieldset>
+
+                                        <h5 class="mt-2">Min Number of Holders</h5>
+                                        <fieldset class="form-group">
+                                        <input type="number" class="form-control" name="minNumberOfHolders" value="<%= general.minNumberOfHolders %>">
+                                        </fieldset>
+
                                         <button type="submit" class="btn mr-1 mb-1 btn-success">Save</button>
                                     </form>
                                 </div>

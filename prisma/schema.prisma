@@ -130,19 +130,24 @@ model ConstraintType {
 }
 
 model GeneralConstraints {
-  id               Int               @id  @default(autoincrement())
-  marketCap        Boolean           @map(name: "market_cap")
-  maxCap           BigInt            @map(name: "max_cap")
-  minCap           BigInt            @map(name: "min_cap")
-  liquidity        Boolean           @map(name: "liquidity")
-  maxLiq           BigInt            @map(name: "max_liq")
-  minLiq           BigInt            @map(name: "min_liq")
-  ownerRenounced   Boolean           @map(name: "owner_renounced")
-  lockedLiquidity  Boolean           @map(name: "locked_liquidity")
-  user             User              @relation(fields: [userId], references: [id])
-  userId           Int               @map(name: "user_id")
-  constraintType   ConstraintType    @relation(fields: [constraintTypeId], references: [id])
-  constraintTypeId Int               @map(name: "constraint_type_id")
+  id                 Int             @id  @default(autoincrement())
+  marketCap          Boolean         @map(name: "market_cap")
+  maxCap             BigInt          @map(name: "max_cap")
+  minCap             BigInt          @map(name: "min_cap")
+  liquidity          Boolean         @map(name: "liquidity")
+  maxLiq             BigInt          @map(name: "max_liq")
+  minLiq             BigInt          @map(name: "min_liq")
+  timeBased          Boolean         @map(name: "time_based")
+  timeForChecks      Int?            @map(name: "time_for_checks")
+  ownerRenounced     Boolean?        @map(name: "owner_renounced")
+  maxLiqTokInAddress Int?            @map(name: "max_liq_tok_in_address")
+  maxTokInAddress    Int?            @map(name: "max_tok_in_address")
+  minNumberOfTxs     Int?            @map(name: "min_number_of_trans")
+  minNumberOfHolders Int?            @map(name: "min_number_of_holders")
+  user               User            @relation(fields: [userId], references: [id])
+  userId             Int             @map(name: "user_id")
+  constraintType     ConstraintType  @relation(fields: [constraintTypeId], references: [id])
+  constraintTypeId   Int             @map(name: "constraint_type_id")
 
   @@map(name: "general_constraints")
 }
@@ -170,4 +175,41 @@ model UserContractCodeCons {
   userId                    Int                     @map(name: "user_id")
 
   @@map(name: "user_contract_code_cons")
+}
+
+model Token {
+  id           Int      @id @default(autoincrement())
+  address      String  
+  transactions Int
+  holders      TokenHolder[]
+
+  @@map(name: "tokens")
+}
+
+model Pair {
+  id           Int      @id @default(autoincrement())
+  address      String  
+  holders      LiquidityHolder[]
+
+  @@map(name: "pairs")
+}
+
+model LiquidityHolder {
+  id          Int     @id @default(autoincrement())
+  address     String  
+  percentage  Float               
+  pair        Pair    @relation(fields: [pairId], references: [id])
+  pairId      Int     @map(name: "pair_id")
+
+  @@map(name: "liquidity_holders")
+}
+
+model TokenHolder {
+  id          Int     @id @default(autoincrement())
+  address     String  
+  percentage  Float               
+  token       Token   @relation(fields: [tokenId], references: [id])
+  tokenId     Int     @map(name: "token_id")
+
+  @@map(name: "token_holders")
 }

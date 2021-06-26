@@ -22,15 +22,16 @@ class NewPairListener {
     newTokenEvent;
 
     //Set up required initial fields 
-    constructor(currencyTokenAddress, stableTokenAddress, factoryAddress, providerAddress) {
+    constructor(currencyTokenAddress, stableTokenAddress, factoryAddress, providerAddress, burnAddress) {
         this.currencyTokenAddress = currencyTokenAddress;
         this.stableTokenAddress = stableTokenAddress;
         this.providerAddress = providerAddress
         this.factoryAddress = factoryAddress;
+        this.burnAddress = burnAddress;
         this.provider =  new ethers.providers.WebSocketProvider(providerAddress);;
     }
 
-    async processData(newTokenAddress) {
+    async processData(newTokenAddress, liquidityHolders, tokenHolders) {
 
         let sourceCode = "";
         let marketCap = 0;
@@ -48,15 +49,35 @@ class NewPairListener {
         sourceCode = response.result[0].sourceCode;
         
         //If Basic check pass initialze data
-        const currencyTrade  = new Trade(self.curencyRoute, new TokenAmount(self.currencyToken, ethers.utils.parseUnits('0.1', 'ether'), TradeType.EXACT_INPUT));
-        const currencyInStablePrice = currencyTrade.executionPrice.toSignificant(6);
+        const currencyTrade  = new Trade(self.curencyRoute, new TokenAmount(self.currencyToken, ethers.utils.parseUnits('1', 'ether'), TradeType.EXACT_INPUT));
+        const currencyInStablePrice = currencyTrade.executionPrice.toSignificant(6); //1 BNB/ETH en USDT/DAI
 
         const newToken = await Fetcher.fetchTokenData(ChainId.MAINNET, newTokenAddress, self.provider);
         const pair     = await Fetcher.fetchPairData(self.currencyToken, newToken, self.provider);
 
-        const newTokenroute      = new Route([pair], self.currencyToken)
-        const newTokenTrade      = new Trade(newTokenroute, new TokenAmount(self.currencyToken, ethers.utils.parseUnits('0.1', 'ether'), TradeType.EXACT_INPUT))
-        const newTokenInCurrency = newTokenTrade.executionPrice.toSignificant(6);
+        const newTokenroute       = new Route([pair], newToken)
+        const newTokenTrade       = new Trade(newTokenroute, new TokenAmount(self.currencyToken, ethers.utils.parseUnits('1', newToken.decimals), TradeType.EXACT_INPUT))
+        const currencyInNewToken = newTokenTrade.executionPrice.toSignificant(6); //1 BNB/ETH en New token
+
+        //**Initializes Variables for processing */
+        let liquidityToken = pair.liquidityToken;
+
+        let liquidityContract = new ethers.Contract(
+            liquidityToken,
+            ['function totalSupply() public view override returns (uint256) ',
+             'function balanceOf(address account) public view override returns (uint256)'],
+            this.provider
+          );
+
+        let tokenContract = new ethers.Contract(
+            this.newTokenAddress,
+            ['function totalSupply() public view override returns (uint256) ', 
+             'function balanceOf(address account) public view override returns (uint256)',
+             'function owner() public view virtual returns (address)'],
+            this.provider
+        );
+
+        let owner = await tokenContract.owner();
 
         //**Process liquidity**//
         
@@ -66,25 +87,172 @@ class NewPairListener {
 
         //Retrieve execution price of both tokens and calculate liquidity pool 
         let currencyReserveTotal = currencyReserve * currencyInStablePrice;
-        let newTokenReserveTotal = newTokenInCurrency * newTokenReserve * currencyInStablePrice;
+        let newTokenReserveTotal = currencyInNewToken * newTokenReserve * currencyInStablePrice; //42k * 50 * 250
         liquidity = newTokenReserveTotal + currencyReserveTotal;
 
-        //Process market cap
-        response    = await axios.get(`https://api.bscscan.com/api?module=stats&action=tokensupply&contractaddress=${newTokenAddress}&apikey=${process.env.BSCSCAN_APIKEY}`);
+        console.log("liquidity: " + liquidity);
 
-        //If there was any problem with the request or the source code isn't verified or maximum amount of request reached return null
-        if (response.status == "0" || response,result[0].sourceCode == "")  {
-            console.log(response);
-            return null;
+        //Get total liquidity tokens
+        let totalLiquidityTokens = await liquidityContract.totalSupply().toNumber();
+        let burned               = await liquidityContract.balanceOf(burnAddress).toNumber();
+        
+        totalLiquidityTokens         = totalLiquidityTokens - burned;
+        liquidityHolders.totalSupply = totalLiquidityTokens;
+
+        //Check if owner has liquidity tokens
+        let ownerBalance = await liquidityContract.getBalanceOf(owner);
+
+        //If the owner has balance add it as a holder
+        if (ownerBalance) {
+            liquidityHolders.holders.push({address: owner, value: ownerBalance});
         }
 
-        let totalSupply = response.result;
-        marketCap       = totalSupply * newTokenInCurrency * currencyInStablePrice;
+        //**Process marketcap *//
+        
+        let totalSupply = await tokenContract.totalSupply().toNumber();
+        let burned      = await tokenContract.balanceOf(burnAddress).toNumber();
+        
+        let totalSupply          = totalSupply - burned;
+        marketCap                = totalSupply * currencyInNewToken * currencyInStablePrice;
+        tokenHolders.totalSupply = totalSupply
 
-        //TESTING CONSOLE LOG DELETE
-        console.log(new ContractProcessedData(self.currencyToken, newToken, pair, marketCap, liquidity, sourceCode, self.providerAddress));
+        console.log("marketCap: " + marketCap, "total supply: " + totalSupply);
 
-        //return new ContractProcessedData(self.currencyToken, newToken, pair, marketCap, liquidity, sourceCode, self.providerAddress);
+        //Check if owner has liquidity tokens
+        ownerBalance = await tokenContract.getBalanceOf(owner);
+
+        //If the owner has balance add it as a holder
+        if (ownerBalance) {
+            tokenHolders.holders.push({address: owner, value: ownerBalance});
+        }
+
+        return [new ContractProcessedData(self.currencyToken, newToken, pair, marketCap, liquidity, sourceCode, self.providerAddress)];
+    }
+
+    transferTracking(tokenHolders, liquidityHolders, tokenOut, pairAddress) {
+
+        //Set up token transfer listener
+        let tokenRouter = new ethers.Contract(
+            TokenOut,
+            ['event Transfer(address indexed from, address indexed to, uint value);'],
+            this.provider
+        );
+
+        tokenRouter.on('Transfer', (from, to, value) => {
+
+            //Increae number of transactions
+            tokenHolders.numberTxs = tokenHolders.numberTxs + 1;
+
+            //Special case if token are sent to a burn address
+            if (to == this.burnAddress){
+                tokenHolders.totalSupply = tokenHolders.totalSupply - value;
+            }
+
+            //If the transfer was from this address
+            if (from == tokenOut) {
+
+                //Initialize helper var
+                let found = false;
+
+                //Iterate over all holders
+                tokenHolders.holders.forEach( (holder) => {
+                    if (holder.address == to){
+                        found = true;
+                        holder.amount = holder.amount + value;
+                    }
+                });
+
+                //If the address isn't in the holders array
+                if (!found) {
+                    tokenHolders.holders.push({ address : to, value : value});
+
+                    tokenHolders.numberHolders = tokenHolders.numberHolders + 1;
+                }
+            }
+
+            //If the transfer was to this address
+            if (to == tokenOut) {
+                
+                //Iterate over all holders
+                tokenHolders.holders.forEach( (holder, index) => {
+                    if (holder.address == from){
+                        found = true;
+                        holder.amount = holder.amount - value;
+
+                        //Remove from array
+                        if (holder.amount < 0) {
+                            tokenHolders.numberHolders - 1; 
+                            tokenHolders.holders.splice(index,1);
+                        }
+                    }
+                });
+            }
+        });
+
+        //Set up liquidity transfer listener
+        let liquidityRouter = new ethers.Contract(
+            pairAddress,
+            ['event Transfer(address indexed from, address indexed to, uint value);'],
+            this.provider
+        );
+
+        liquidityRouter.on('Transfer', (from, to, value) => {
+
+            //Special case to check if address sent to is a contract and therefore locked
+            if (this.provider.getCode(to) == "0x"){
+                tokenHolders.totalSupply = tokenHolders.totalSupply - value;
+            }
+
+            //Special case if token are sent to a burn address
+            if (to == this.burnAddress){
+                tokenHolders.totalSupply = tokenHolders.totalSupply - value;
+            }
+
+            //If the transfer was from this address
+            if (from == tokenOut) {
+
+                //Initialize helper var
+                let found = false;
+
+                //Iterate over all holders
+                liquidityHolders.holders.forEach( (holder) => {
+                    if (holder.address == to){
+                        found = true;
+                        holder.amount = holder.amount + value;
+                    }
+                });
+
+                //If the address isn't in the holders array
+                if (!found) {
+                    liquidityHolders.holders.push({ address : to, value : value});
+                }
+            }
+
+            //If the transfer was to this address
+            if (to == tokenOut) {
+                
+                //Iterate over all holders
+                liquidityHolders.holders.forEach( (holder, index) => {
+                    if (holder.address == from){
+                        found = true;
+                        holder.amount = holder.amount - value;
+
+                        //Remove from array
+                        if (holder.amount < 0) {
+                            liquidityHolders.holders.splice(index,1);
+                        }
+                    }
+                });
+            }
+        });
+
+        //After 10 minutes stop listening to transfer events
+        setTimeout(() => {
+            tokenRouter.removeAllListeners();
+            liquidityRouter.removeAllListeners();
+        }, 600000)
+
+        return [tokenHolders, liquidityHolders];
     }
 
     //Handles new contracts being created on pancake swap
@@ -115,10 +283,40 @@ class NewPairListener {
             return;
         }
 
-        let contractProcessedData = await processData(tokenOut);
+        /** Basics checks Passed initialize holders data */
 
-        //Emit a new event if basic checks are successful
-        if (contractProcessedData) newTokenEvent.emit('newToken', tokenIn, tokenOut, contractProcessedData);
+        //This variable should have a lifespan of about 10 min. For that reasons it is handled in memory. 
+        //If the amount of transactions grow too much, pass it to the database
+        //Set up token holders transfers
+        let tokenHolders = {
+            address : tokenOut,
+            numberTxs : 0,
+            numberHolders : 0,
+            totalSupply : totalSupplyToken,
+            holders : []
+        }
+
+        //Set up liquidity holder transfers
+        let liquidityHolders = { 
+            address : pairAddress,
+            totalSupply : totalSupplyLiquidity,
+            holders : []
+        }
+
+        //Process the data
+        let contractProcessedData = await processData(tokenOut, tokenHolders, liquidityHolders);
+
+        //Testing
+        console.log(contractProcessedData);
+
+        //Process new token contract if basic checks are successful
+        if (contractProcessedData) {
+
+            //Initialize transfer tracking
+            transferTracking(tokenIn, TokenOut, pairAddress);
+
+            newTokenEvent.emit('newToken', contractProcessedData, tokenTracking, liquidityTracking);
+        } 
     }
 
     //Starts listening to pancake factory
@@ -134,7 +332,7 @@ class NewPairListener {
         this.newTokenEvent.setMaxListeners(0);
 
         //Set up a contract with the pancake swap factory
-        factory = new ethers.Contract(
+        let factory = new ethers.Contract(
             this.factoryAddress,
             ['event PairCreated(address indexed token0, address indexed token1, address pair, uint)'],
             this.provider

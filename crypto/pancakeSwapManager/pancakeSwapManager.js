@@ -22,8 +22,9 @@ class PancakeSwapManager {
         let factoryAddress = process.env.PANCAKE_FACTORY;
         let router = process.env.PANCAKE_ROUTER;
         let provider = process.env.WEBSOCKET_PROVIDER;
+        let burnAddress = proicess.env.BURN_ADDRESS;
         
-        this.newPairListener = new NewPairListener(currencyTokenAddress, stableTokenAddress, factoryAddress, provider)
+        this.newPairListener = new NewPairListener(currencyTokenAddress, stableTokenAddress, factoryAddress, provider, burnAddress)
 
         this.passiveBotManager = new PassiveBotManager(this.newPairListener, redisConnection, router, provider);
         this.buyOrderBotManager = new BuyOrderBotManager(router, provider);

@@ -38,9 +38,9 @@ class BotManager {
         transactions = { number : 0 }
 
         //Listen to pair created event
-        this.newPairEventEmitter.newTokenEvent.listen('newToken', (tokenIn, tokenOut, data) => { 
+        this.newPairEventEmitter.newTokenEvent.listen('newToken', (data, tokenTracking, liquidityTracking) => { 
             setImmediate(() => {
-                bot.onNewToken(tokenIn, tokenOut, data, transactions);
+                bot.onNewToken(data, transactions, tokenTracking, liquidityTracking);
             })
         });
 

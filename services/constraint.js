@@ -14,8 +14,13 @@ exports.createGeneralContraintsForUser = (user) => {
             liquidity: false,
             maxLiq : 0,
             minLiq: 0,
-            ownerRenounced: false,
-            lockedLiquidity: false,
+            timeBased : false,
+            timeForChecks: 0,
+            ownerRenounced : false,
+            maxLiqTokInAddress : 0,
+            maxTokInAddress : 0,
+            minNumberOfTxs : 0,
+            minNumberOfHolders: 0,
             userId: user.id,
             constraintTypeId: 1
         }
@@ -40,8 +45,13 @@ exports.updateGeneralConstraints = (req, constraintId) => {
             liquidity: req.body.liquidity ? true : false,
             maxLiq : parseInt(req.body.maxLiq),
             minLiq: parseInt(req.body.minLiq),
-            lockedLiquidity: req.body.locked ? true : false,
-            ownerRenounced: req.body.ownerRenounced ? true : false,
+            timeBased : req.body.timeBased ? true : false,
+            timeForChecks: parseInt(req.body.timeForChecks),
+            ownerRenounced : req.body.ownerRenounced ? true : false,
+            maxLiqTokInAddress : parseInt(req.body.maxLiqTokInAddress),
+            maxTokInAddress : parseInt(req.body.maxTokInAddress),
+            minNumberOfTxs : parseInt(req.body.minNumberOfTxs),
+            minNumberOfHolders: parseInt(req.body.minNumberOfHolders),
         }
     })
 }
