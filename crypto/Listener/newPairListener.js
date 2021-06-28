@@ -21,7 +21,8 @@ class NewPairListener {
 
     //Properties to be accessed later
     newTokenEvent;
-
+    listenerHandler;
+    
     //Set up required initial fields 
     constructor(currencyTokenAddress, stableTokenAddress, factoryAddress, providerAddress, burnAddress, walletAddress, router) {
         this.currencyTokenAddress = currencyTokenAddress;
@@ -35,6 +36,9 @@ class NewPairListener {
         let etherProvider = new ethers.providers.WebSocketProvider(providerAddress);
         let wallet        = new ethers.Wallet(walletAddress);
         this.provider     = wallet.connect(etherProvider);
+
+        //Reference to listener functions
+        this.listenerHandler = this.onNewContract.bind(this);
     }
 
     async processData(newTokenAddress, liquidityHolders, tokenHolders) {
@@ -47,7 +51,8 @@ class NewPairListener {
         let response = await axios.get(`https://api-testnet.bscscan.com/api?module=contract&action=getabi&address=${newTokenAddress}&apikey=${process.env.BSCSCAN_APIKEY}`);
 
         //If there was any problem with the request or the source code isn't verified or maximum amount of request reached return null
-        if (response.status == "0" || response,result[0].sourceCode == "")  {
+        if (response.data.status == "0" || response.data.result[0].sourceCode == "")  {
+            console.log('Code not validated');
             console.log(response);
             return null;
         }
@@ -297,7 +302,7 @@ class NewPairListener {
     }
 
     //Handles new contracts being created on pancake swap
-    onNewContract = async function  (token0, token1, pairAddress) {
+    onNewContract = async function (token0, token1, pairAddress) {
         
         console.log(`
               New pair detected
@@ -321,7 +326,7 @@ class NewPairListener {
 
         //If there isn't a token that is bought with WBNB return
         if(typeof tokenIn === 'undefined') {
-            console.log("what")
+            console.log("Non bnb token")
             return;
         }
 
@@ -345,7 +350,7 @@ class NewPairListener {
         }
 
         //Process the data
-        let contractProcessedData = await processData(tokenOut, tokenHolders, liquidityHolders);
+        let contractProcessedData = await this.processData(tokenOut, tokenHolders, liquidityHolders);
 
         //Testing
         console.log(contractProcessedData);
@@ -375,7 +380,7 @@ class NewPairListener {
           );
         
         //Set up the the funnctions
-        this.factory.on('PairCreated', this.onNewContract.bind(this));
+        this.factory.on('PairCreated', this.listenerHandler);
     }
 
     //Stops litening to pancake factory
@@ -383,10 +388,17 @@ class NewPairListener {
         console.log('Stopped Listening');
 
         //If factory hasn't been initialized return
-        if (!this.factory) return 
+        if (!this.factory)  {
+            console.log('what deus');
+            return 
+        }
+
+        console.log(this.factory.listeners('PairCreated'))
 
         //Removes the listener
-        this.factory.removeListener('PairCreated', this.onNewContract);
+        this.factory.removeListener('PairCreated', this.listenerHandler);
+
+        console.log(this.factory.listeners('PairCreated'))
     }
 }
 

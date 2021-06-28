@@ -23,6 +23,9 @@ class Bot {
         this.generalConfCons = botData.generalConfCons;
         this.contractCodeCons = botData.contractCodeCons;
         this.queue = queue;
+
+        //Save handler
+        this.onNewTokenHandler = this.onNewToken.bind(this);
     }
     
     //Function called when a new token is given to the bot

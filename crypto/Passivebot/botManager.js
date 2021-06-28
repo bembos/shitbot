@@ -37,15 +37,18 @@ class BotManager {
         //Set up current number of transactions open
         let transactions = { number : 0 }
 
+        let listenerAsyncFunction = async function (data, transactions, tokenTracking, liquidityTracking) {
+            setImmediate(() => {
+                bot.onNewTokenHandler(data, transactions, tokenTracking, liquidityTracking);
+            })
+        }
+
         //Saves relationship
-        this.activeBots.push({id: botData.bot.id, data: {'bot' : bot, 'queue': queue, 'transactions' : transactions}})
+        this.activeBots.push({id: botData.bot.id, data: {'bot' : bot, 'queue': queue, 'transactions' : transactions, 'listener': listenerAsyncFunction}});
+
 
         //Listen to pair created event
-        this.newPairEventEmitter.newTokenEvent.on('newToken', (data, tokenTracking, liquidityTracking) => { 
-            setImmediate((transactions) => {
-                bot.onNewToken(data, transactions, tokenTracking, liquidityTracking);
-            })
-        });   
+        this.newPairEventEmitter.newTokenEvent.on('newToken', listenerAsyncFunction);   
           
     }
 
@@ -55,10 +58,10 @@ class BotManager {
 
         let activeBot= this.activeBots.find(activeBot => activeBot.id == botData.bot.id);
         let queue = activeBot.data.queue;
-        let bot = activeBot.data.bot;
+        let listener = activeBot.data.listener
 
         //Remove event
-        this.newPairEventEmitter.newTokenEvent.removeListener('newToken', bot.onNewToken);
+        this.newPairEventEmitter.newTokenEvent.removeListener('newToken', listener);
         
         queue.obliterate();
      
