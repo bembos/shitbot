@@ -20,7 +20,7 @@ exports.configureBot = async (req, res, next) => {
   if (req.params.bot != user.bot.id){
     req.flash('error_msg', 'Error updating')
 
-    res.redirect('bot')
+    res.redirect('/bot')
   }
   
   //Update bot configuration
@@ -34,7 +34,7 @@ exports.configureBot = async (req, res, next) => {
 //Starts the bot
 exports.start = async (req, res, next) => {
 
-  await botService.startBot(req);
+  await botService.start(req);
 
   req.flash('sucess_msg', 'Bot Successfuly started'); 
 
@@ -45,7 +45,7 @@ exports.start = async (req, res, next) => {
 //Stops the bot
 exports.stop = async (req, res, next) => {
 
-  await botService.stopBot(req);
+  await botService.stop(req);
 
   req.flash('sucess_msg', 'Bot Successfuly stopped'); 
 

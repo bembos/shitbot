@@ -24,7 +24,13 @@ class BotManager {
         }
 
         //Create a new queue
-        let queue = new Queue('userQueue' . botData.id, this.redisConnection);
+        let queue = new Queue('userQueue' + botData.bot.id, {
+            redis : {
+                host: process.env.REDIS_HOST,
+                port: parseInt(process.env.REDIS_PORT),
+                password: process.env.REDIS_PASSWORD
+            }
+        });
 
         //Initializes a new bot
         let bot = new Bot(this.provider, this.router, botData, queue);
@@ -33,34 +39,36 @@ class BotManager {
         queue.process('sellSwap', job => {
             bot.processSellOrder(job);
         });
-
+        
         //Set up current number of transactions open
-        transactions = { number : 0 }
-
-        //Listen to pair created event
-        this.newPairEventEmitter.newTokenEvent.listen('newToken', (data, tokenTracking, liquidityTracking) => { 
-            setImmediate(() => {
-                bot.onNewToken(data, transactions, tokenTracking, liquidityTracking);
-            })
-        });
+        let transactions = { number : 0 }
 
         //Saves relationship
-        this.activeBots[botData.bot.id] = {'bot' : bot, 'queue': queue, 'transactions' : transactions};
+        this.activeBots.push({id: botData.bot.id, data: {'bot' : bot, 'queue': queue, 'transactions' : transactions}})
+/*
+        //Listen to pair created event
+        this.newPairEventEmitter.newTokenEvent.on('newToken', (data, tokenTracking, liquidityTracking) => { 
+            setImmediate((transactions) => {
+                bot.onNewToken(data, transactions, tokenTracking, liquidityTracking);
+            })
+        });   
+        */     
     }
 
     //Retrieves botlistener instance from active bots array, detaches event and deletes queue
     stop(botData) {
 
-        let bot = this.activeBots[botData.bot.id].bot;
-        let queue = this.activeBots[botData.bot.id].queue;
+
+        let activeBot= this.activeBots.find(activeBot => activeBot.id == botData.bot.id);
+        let queue = activeBot.data.queue;
+        let bot = activeBot.data.bot;
 
         //Remove event
         this.newPairEventEmitter.newTokenEvent.removeListener('newToken', bot.onNewToken);
         
-        //Clear queue
-        queue.obliterate()
-
-        delete this.activeBots[botData.bot.id];
+     
+        //Delete bot in array
+        this.activeBots = this.activeBots.filter((activeBot)=> {activeBot.id != botData.bot.id});
 
         //If there are no more bots
         if (this.activeBots.length == 0) {

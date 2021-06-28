@@ -95,8 +95,8 @@ exports.start = async (req) => {
     passiveBotManager.start({
         bot : user.bot,
         user : user,
-        generalConfCons: generalConstraints,
-        contractCodeCons : contractCodeConstaints
+        generalConfCons: user.generalConstraints,
+        contractCodeCons : user.contractCodeConstaints
     });
 
     //Set bot  to enabled
@@ -129,13 +129,8 @@ exports.stop = async (req) => {
         }
     })
 
-    //Start the instance
-    passiveBotManager.stop({
-        bot : user.bot
-    });
-
-    //Update the bot
-    await prisma.bot.update({
+     //Update the bot
+     await prisma.bot.update({
         where : {
             id: user.bot.id
         },
@@ -143,4 +138,11 @@ exports.stop = async (req) => {
             enabled : false,
         }
     })
+
+    //Start the instance
+    passiveBotManager.stop({
+        bot : user.bot
+    });
+
+   
 }

@@ -1,6 +1,6 @@
 //Ethers.js
 const ethers = require('ethers');
-const { ChainId, Token, Fetcher, Route, Trade, TradeType, TokenAmount } = require('@uniswap/sdk');
+const { Token, Fetcher, Route, Trade, TradeType, TokenAmount } = require('@uniswap/sdk');
 
 
 //Basic event class
@@ -12,6 +12,7 @@ const axios = require('axios');
 
 //Utilities
 const ContractProcessedData = require('../utilities/contractProcessedData');
+const ChainId = require('../utilities/chainId');
 
 class NewPairListener {
 
@@ -22,13 +23,17 @@ class NewPairListener {
     newTokenEvent;
 
     //Set up required initial fields 
-    constructor(currencyTokenAddress, stableTokenAddress, factoryAddress, providerAddress, burnAddress) {
+    constructor(currencyTokenAddress, stableTokenAddress, factoryAddress, providerAddress, burnAddress, walletAddress) {
         this.currencyTokenAddress = currencyTokenAddress;
         this.stableTokenAddress = stableTokenAddress;
         this.providerAddress = providerAddress
         this.factoryAddress = factoryAddress;
         this.burnAddress = burnAddress;
-        this.provider =  new ethers.providers.WebSocketProvider(providerAddress);;
+
+        //Set up the wallet
+        let etherProvider = new ethers.providers.WebSocketProvider(providerAddress);
+        let wallet        = new ethers.Wallet(walletAddress);
+        this.provider     = wallet.connect(etherProvider);
     }
 
     async processData(newTokenAddress, liquidityHolders, tokenHolders) {
@@ -50,14 +55,14 @@ class NewPairListener {
         
         //If Basic check pass initialze data
         const currencyTrade  = new Trade(self.curencyRoute, new TokenAmount(self.currencyToken, ethers.utils.parseUnits('1', 'ether'), TradeType.EXACT_INPUT));
-        const currencyInStablePrice = currencyTrade.executionPrice.toSignificant(6); //1 BNB/ETH en USDT/DAI
+        const currencyInStablePrice = currencyTrade.executionPrice.toSignificant(6); //1 BNB en USDT
 
         const newToken = await Fetcher.fetchTokenData(ChainId.MAINNET, newTokenAddress, self.provider);
         const pair     = await Fetcher.fetchPairData(self.currencyToken, newToken, self.provider);
 
         const newTokenroute       = new Route([pair], newToken)
         const newTokenTrade       = new Trade(newTokenroute, new TokenAmount(self.currencyToken, ethers.utils.parseUnits('1', newToken.decimals), TradeType.EXACT_INPUT))
-        const currencyInNewToken = newTokenTrade.executionPrice.toSignificant(6); //1 BNB/ETH en New token
+        const currencyInNewToken = newTokenTrade.executionPrice.toSignificant(6); //1 New token en BNB
 
         //**Initializes Variables for processing */
         let liquidityToken = pair.liquidityToken;
@@ -118,7 +123,7 @@ class NewPairListener {
 
         console.log("liquidity: " + liquidity);
 
-        totalLiquidityTokens         = totalLiquidityTokens - burned;
+        totalLiquidityTokens         = totalLiquidityTokens - liquidityBurned;
         liquidityHolders.totalSupply = totalLiquidityTokens; 
 
         //If the owner has balance add it as a holder
@@ -137,6 +142,8 @@ class NewPairListener {
         if (tokenOwnerBalance) {
             tokenHolders.holders.push({address: owner, value: tokenOwnerBalance});
         }
+
+        console.log('Token Holders: ' + tokenHolders.holders, 'Liquidity Holders: ' + liquidityHolders.holders)
 
         return [new ContractProcessedData(self.currencyToken, newToken, pair, marketCap, liquidity, sourceCode, self.providerAddress)];
     }
@@ -330,40 +337,59 @@ class NewPairListener {
         if (contractProcessedData) {
 
             //Initialize transfer tracking
-            transferTracking(tokenIn, TokenOut, pairAddress);
+            //transferTracking(tokenIn, TokenOut, pairAddress);
 
-            newTokenEvent.emit('newToken', contractProcessedData, tokenTracking, liquidityTracking);
+            //newTokenEvent.emit('newToken', contractProcessedData, tokenTracking, liquidityTracking);
         } 
     }
 
     //Starts listening to pancake factory
     async start() {
-        
-        //Initialize
-        this.currencyToken  = await Fetcher.fetchTokenData(ChainId.MAINNET, this.currencyTokenAddress, this.provider);
-        let stableToken     = await Fetcher.fetchTokenData(ChainId.MAINNET, this.stableTokenAddress, this.provider);
-        let currencyPair    = await Fetcher.fetchPairData(stableToken, this.currencyToken, this.provider);
-        this.curencyRoute    = new Route([currencyPair], this.WBNBToken)
+        console.log('start');
 
+        //Initialize
+        this.currencyToken  = await Fetcher.fetchTokenData(ChainId.BSCTESTNET, ethers.utils.getAddress(this.currencyTokenAddress), this.provider);
+        let stableToken     = await Fetcher.fetchTokenData(ChainId.BSCTESTNET, ethers.utils.getAddress(this.stableTokenAddress), this.provider);
+           
         this.newTokenEvent = new event.EventEmitter();
         this.newTokenEvent.setMaxListeners(0);
-
+        
         //Set up a contract with the pancake swap factory
-        let factory = new ethers.Contract(
+        this.factory = new ethers.Contract(
             this.factoryAddress,
-            ['event PairCreated(address indexed token0, address indexed token1, address pair, uint)'],
+            ['event PairCreated(address indexed token0, address indexed token1, address pair, uint)',
+             'function getAmountsOut(address factory, uint amountIn, address[] memory path) internal view returns (uint[] memory amounts)'],
             this.provider
           );
-        
+        /*
+        try {
+            let result = await this.factory.getAmountsOut(this.factoryAddress, 
+                1,
+                [ethers.utils.getAddress(this.currencyTokenAddress), ethers.utils.getAddress(this.stableTokenAddress)], 
+                { 
+                    gasPrice: "10000000000", 
+                    gasLimit: "15000000000"
+                }
+            )
+        } catch (error) {
+            console.log(error);
+        }
+        */
+            
+        /*
+        this.curencyRoute    = new Route([currencyPair], this.currencyToken)
+        let currencyPair    = await Fetcher.fetchPairData(this.currencyToken, stableToken,  this.provider);
+        console.log('pair');
+        /*/
         //Set up the the funnctions
-        factory.on('PairCreated', this.onNewContract);
+        //this.factory.on('PairCreated', this.onNewContract);
     }
 
     //Stops litening to pancake factory
     stop() {
 
         //If factory hasn't been initialized return
-        if (!factory) return 
+        if (!this.factory) return 
 
         //Removes the listener
         this.factory.removeListener('PairCreated', this.onNewContract);

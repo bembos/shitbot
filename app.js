@@ -52,22 +52,18 @@ const overrideHelper = require('./helpers/methodOverride');
 const methodOverride = require('method-override')
 app.use(methodOverride(overrideHelper.methodInBody))
 
-//Redis stuff
-const Redis = require('ioredis');
-const redis = new Redis({
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT,
-    password: process.env.REDIS_PASSWORD,
-	limiter: {
-		max: 100,
-		duration: 10000
-		}
-});
+//Redis client definition
+const client = {
+	redis : {
+		host: process.env.REDIS_HOST,
+		port: parseInt(process.env.REDIS_PORT),
+		password: process.env.REDIS_PASSWORD
+	}
+}
 
 //Set up crypto pancake swap listener
 const PancakeSwapManager = require('./crypto/pancakeSwapManager/pancakeSwapManager');
-const pancakeSwapManager = new PancakeSwapManager();
-pancakeSwapManager.initialize(redis)
+PancakeSwapManager.initialize(client);
 
 // view engine setup
 app.set('view engine', 'ejs');
