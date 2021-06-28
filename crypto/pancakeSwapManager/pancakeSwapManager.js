@@ -25,7 +25,7 @@ class PancakeSwapIntegration {
         let burnAddress = process.env.BURN_ADDRESS_TEST;
         let walletToPowerTrades = process.env.WALLET_PRIVATE;
         
-        this.newPairListener = new NewPairListener(currencyTokenAddress, stableTokenAddress, factoryAddress, provider, burnAddress, walletToPowerTrades)
+        this.newPairListener = new NewPairListener(currencyTokenAddress, stableTokenAddress, factoryAddress, provider, burnAddress, walletToPowerTrades, router)
 
         this.passiveBotManager = new PassiveBotManager(this.newPairListener, redisConnection, router, provider);
         this.buyOrderBotManager = new BuyOrderBotManager(router, provider);

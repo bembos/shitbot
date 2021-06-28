@@ -23,12 +23,13 @@ class NewPairListener {
     newTokenEvent;
 
     //Set up required initial fields 
-    constructor(currencyTokenAddress, stableTokenAddress, factoryAddress, providerAddress, burnAddress, walletAddress) {
+    constructor(currencyTokenAddress, stableTokenAddress, factoryAddress, providerAddress, burnAddress, walletAddress, router) {
         this.currencyTokenAddress = currencyTokenAddress;
         this.stableTokenAddress = stableTokenAddress;
         this.providerAddress = providerAddress
         this.factoryAddress = factoryAddress;
         this.burnAddress = burnAddress;
+        this.router = router;
 
         //Set up the wallet
         let etherProvider = new ethers.providers.WebSocketProvider(providerAddress);
@@ -43,7 +44,7 @@ class NewPairListener {
         let liquidity = 0;
 
         //Retrieve source code if verified using bscscan
-        let response = await axios.get(`https://api.bscscan.com/api?module=contract&action=getsourcecode&address=${newTokenAddress}&apikey=${process.env.BSCSCAN_APIKEY}`);
+        let response = await axios.get(`https://api-testnet.bscscan.com/api?module=contract&action=getabi&address=${newTokenAddress}&apikey=${process.env.BSCSCAN_APIKEY}`);
 
         //If there was any problem with the request or the source code isn't verified or maximum amount of request reached return null
         if (response.status == "0" || response,result[0].sourceCode == "")  {
@@ -54,9 +55,6 @@ class NewPairListener {
         sourceCode = response.result[0].sourceCode;
         
         //If Basic check pass initialze data
-        const currencyTrade  = new Trade(self.curencyRoute, new TokenAmount(self.currencyToken, ethers.utils.parseUnits('1', 'ether'), TradeType.EXACT_INPUT));
-        const currencyInStablePrice = currencyTrade.executionPrice.toSignificant(6); //1 BNB en USDT
-
         const newToken = await Fetcher.fetchTokenData(ChainId.MAINNET, newTokenAddress, self.provider);
         const pair     = await Fetcher.fetchPairData(self.currencyToken, newToken, self.provider);
 
@@ -82,6 +80,12 @@ class NewPairListener {
             this.provider
         );
 
+        let currentStablePriceRouter = new ethers.Contract(
+            this.router,
+            ['function getAmountsOut(uint amountIn, address[] memory path) public view virtual override returns (uint[] memory amounts)'],
+            this.provider
+        );
+
         let owner;
         let totalLiquidityTokens;
         let liquidityBurned;
@@ -89,6 +93,7 @@ class NewPairListener {
         let tokenBurned;
         let liquidityOwnerBalance;
         let tokenOwnerBalance;
+        let currencyInStablePrice;
         
         //Perform calls to the contract. If the contract doesn't have one of the functions its probably a scam. Log the errors for testing
         try {
@@ -105,6 +110,17 @@ class NewPairListener {
             //Check if owner has tokens
             tokenOwnerBalance = await tokenContract.getBalanceOf(owner);
 
+            let result = await currentStablePriceRouter.getAmountsOut(
+                1,
+                [ethers.utils.getAddress(this.currencyTokenAddress), ethers.utils.getAddress(this.stableTokenAddress)], 
+                { 
+                    gasPrice: "10000000000", 
+                    gasLimit: "15000000000"
+                }
+            )
+    
+            currentStablePriceRouter = result[1].toNumber();
+
         } catch (error) {
             console.log(error);
             return null;
@@ -118,7 +134,7 @@ class NewPairListener {
 
         //Retrieve execution price of both tokens and calculate liquidity pool 
         let currencyReserveTotal = currencyReserve * currencyInStablePrice;
-        let newTokenReserveTotal = currencyInNewToken * newTokenReserve * currencyInStablePrice; //42k * 50 * 250
+        let newTokenReserveTotal = currencyInNewToken * newTokenReserve * currencyInStablePrice; 
         liquidity = newTokenReserveTotal + currencyReserveTotal;
 
         console.log("liquidity: " + liquidity);
@@ -293,18 +309,19 @@ class NewPairListener {
 
         //Order the new tokens created
         let tokenIn, tokenOut;
-        if(token0 === self.currencyTokenAddress) {
+        if(token0 === this.currencyTokenAddress) {
             tokenIn = token0; 
             tokenOut = token1;
         }
         
-        if(token1 == self.currencyTokenAddress) {
+        if(token1 == this.currencyTokenAddress) {
             tokenIn = token1; 
             tokenOut = token0;
         }
 
         //If there isn't a token that is bought with WBNB return
         if(typeof tokenIn === 'undefined') {
+            console.log("what")
             return;
         }
 
@@ -316,14 +333,14 @@ class NewPairListener {
         let tokenHolders = {
             address : tokenOut,
             numberTxs : 0,
-            totalSupply : totalSupplyToken,
+            totalSupply : 0,
             holders : []
         }
 
         //Set up liquidity holder transfers
         let liquidityHolders = { 
             address : pairAddress,
-            totalSupply : totalSupplyLiquidity,
+            totalSupply : 0,
             holders : []
         }
 
@@ -345,48 +362,25 @@ class NewPairListener {
 
     //Starts listening to pancake factory
     async start() {
-        console.log('start');
+        console.log('Listening');
 
-        //Initialize
-        this.currencyToken  = await Fetcher.fetchTokenData(ChainId.BSCTESTNET, ethers.utils.getAddress(this.currencyTokenAddress), this.provider);
-        let stableToken     = await Fetcher.fetchTokenData(ChainId.BSCTESTNET, ethers.utils.getAddress(this.stableTokenAddress), this.provider);
-           
         this.newTokenEvent = new event.EventEmitter();
         this.newTokenEvent.setMaxListeners(0);
         
         //Set up a contract with the pancake swap factory
         this.factory = new ethers.Contract(
             this.factoryAddress,
-            ['event PairCreated(address indexed token0, address indexed token1, address pair, uint)',
-             'function getAmountsOut(address factory, uint amountIn, address[] memory path) internal view returns (uint[] memory amounts)'],
+            ['event PairCreated(address indexed token0, address indexed token1, address pair, uint)'],
             this.provider
           );
-        /*
-        try {
-            let result = await this.factory.getAmountsOut(this.factoryAddress, 
-                1,
-                [ethers.utils.getAddress(this.currencyTokenAddress), ethers.utils.getAddress(this.stableTokenAddress)], 
-                { 
-                    gasPrice: "10000000000", 
-                    gasLimit: "15000000000"
-                }
-            )
-        } catch (error) {
-            console.log(error);
-        }
-        */
-            
-        /*
-        this.curencyRoute    = new Route([currencyPair], this.currencyToken)
-        let currencyPair    = await Fetcher.fetchPairData(this.currencyToken, stableToken,  this.provider);
-        console.log('pair');
-        /*/
+        
         //Set up the the funnctions
-        //this.factory.on('PairCreated', this.onNewContract);
+        this.factory.on('PairCreated', this.onNewContract.bind(this));
     }
 
     //Stops litening to pancake factory
     stop() {
+        console.log('Stopped Listening');
 
         //If factory hasn't been initialized return
         if (!this.factory) return 

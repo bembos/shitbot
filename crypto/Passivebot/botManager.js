@@ -24,13 +24,7 @@ class BotManager {
         }
 
         //Create a new queue
-        let queue = new Queue('userQueue' + botData.bot.id, {
-            redis : {
-                host: process.env.REDIS_HOST,
-                port: parseInt(process.env.REDIS_PORT),
-                password: process.env.REDIS_PASSWORD
-            }
-        });
+        let queue = new Queue('userQueue' + botData.bot.id, this.redisConnection);
 
         //Initializes a new bot
         let bot = new Bot(this.provider, this.router, botData, queue);
@@ -45,14 +39,14 @@ class BotManager {
 
         //Saves relationship
         this.activeBots.push({id: botData.bot.id, data: {'bot' : bot, 'queue': queue, 'transactions' : transactions}})
-/*
+
         //Listen to pair created event
         this.newPairEventEmitter.newTokenEvent.on('newToken', (data, tokenTracking, liquidityTracking) => { 
             setImmediate((transactions) => {
                 bot.onNewToken(data, transactions, tokenTracking, liquidityTracking);
             })
         });   
-        */     
+          
     }
 
     //Retrieves botlistener instance from active bots array, detaches event and deletes queue
@@ -66,6 +60,7 @@ class BotManager {
         //Remove event
         this.newPairEventEmitter.newTokenEvent.removeListener('newToken', bot.onNewToken);
         
+        queue.obliterate();
      
         //Delete bot in array
         this.activeBots = this.activeBots.filter((activeBot)=> {activeBot.id != botData.bot.id});
