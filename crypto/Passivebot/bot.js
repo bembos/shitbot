@@ -14,6 +14,7 @@ class Bot {
 
     //Helper to use this inside a listener function
     self = this;
+    onNewTokenHandler;
 
     constructor(provider, router, botData, queue){
         this.provider = provider;
@@ -29,7 +30,7 @@ class Bot {
     }
     
     //Function called when a new token is given to the bot
-    onNewToken = async function (contractProcessedData, transactions, tokenTracking, liquidityTracking) {
+    onNewToken = async function (contractProcessedData, tokenTracking, liquidityTracking, transactions) {
 
         //Check number of trades
         if (transactions.number > bot.maxTransaction) return;

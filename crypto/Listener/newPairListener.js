@@ -53,11 +53,10 @@ class NewPairListener {
         //If there was any problem with the request or the source code isn't verified or maximum amount of request reached return null
         if (response.data.status == "0" || response.data.result[0].sourceCode == "")  {
             console.log('Code not validated');
-            console.log(response);
-            return null;
+            return;
         }
         
-        sourceCode = response.result[0].sourceCode;
+        sourceCode = response.data.sourceCode;
         
         //If Basic check pass initialze data
         const newToken = await Fetcher.fetchTokenData(ChainId.MAINNET, newTokenAddress, self.provider);
@@ -379,6 +378,16 @@ class NewPairListener {
             this.provider
           );
         
+        //TESTING PURPOSES ONLY
+            /*
+        let tokenHolders = { address : tokenOut, numberTxs : 0,  totalSupply : 0, holders : [] }
+
+        let liquidityHolders = {  address : pairAddress, totalSupply : 0, holders : [] }
+
+        this.processData('0x9A7C2C28407249669d091b13217aFF403B363928', tokenHolders, liquidityHolders);
+*/
+        //END TESTING
+        
         //Set up the the funnctions
         this.factory.on('PairCreated', this.listenerHandler);
     }
@@ -388,17 +397,10 @@ class NewPairListener {
         console.log('Stopped Listening');
 
         //If factory hasn't been initialized return
-        if (!this.factory)  {
-            console.log('what deus');
-            return 
-        }
-
-        console.log(this.factory.listeners('PairCreated'))
-
+        if (!this.factory) return 
+        
         //Removes the listener
         this.factory.removeListener('PairCreated', this.listenerHandler);
-
-        console.log(this.factory.listeners('PairCreated'))
     }
 }
 
