@@ -36,6 +36,7 @@ exports.create = async (req) => {
         data: {
             label: req.body.label,
             address: req.body.address,
+            pairAddress: req.body.pairAddress,
             slippage: parseInt(req.body.slippage),
             amountGiven:parseFloat(req.body.amountGiven),
             userId: parseInt(req.body.userId),
@@ -101,6 +102,7 @@ exports.update = (fields) => {
         data: {
             label: fields.label,
             address: fields.address,
+            pairAddress: fields.pairAddress,
             slippage: parseInt(fields.slippage),
             amountGiven:parseFloat(fields.amountGiven),
             buyOrderStatusId: statusId

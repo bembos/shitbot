@@ -2,80 +2,119 @@
 const ethers = require('ethers'); 
 const buyOrderService = require('../../services/buyOrder');
 
+//Utilities
+const methods = require('../utilities/methods');
+
 class Bot{
 
-    //Helper to use this inside callbacks
-    self = this;
-
     //Initializes buy order with user's stuff
-    constructor(botData, router, provider){
+    constructor(botData, router, provider, currencyToken, currencyDecimals){
         this.bot = botData.bot;
         this.user = botData.user;
         this.buyOrder = botData.buyOrder;
         this.router = router;
         this.provider = provider;
+        this.currencyToken = currencyToken;
+        this.currencyDecimals = currencyDecimals;
+
+        let etherProvider = new ethers.providers.WebSocketProvider(provider);
+        let wallet        = new ethers.Wallet(this.bot.walletPrivate);
+        this.account      = wallet.connect(etherProvider);
     }
 
     //Function used to listen
-    onMint = async function (sender, tokenInAddress, tokenOutAddress){
+    onMint = async function (sender, amount0, amount1){
 
-        //Perform trade
-        const provider     = new ethers.providers.WebSocketProvider(self.provider);
-        const tokenIn      = await Fetcher.fetchTokenData(ChainId.MAINNET, tokenInAddress, provider);
-        const tokenOut     = await Fetcher.fetchTokenData(ChainId.MAINNET, tokenOutAddress, provider);
-        const pair         = await Fetcher.fetchPairData(tokenIn, tokenOut, provider);
+        let tokenOutAddress = this.buyOrder.address;
+        let pairAddress = this.buyOrder.pairAddress;
+        let token0;
+        let newtokenDecimals;
+        let liquidityDecimals;
 
-        const decimals = tokenIn.decimals;
+        //Make required contract calls (token 0, decimals)
+        let liquidityContract = new ethers.Contract(
+            pairAddress,
+            ['function token0() external view returns (address)',
+             'function decimals() external pure returns (uint8)'],
+            this.account
+          );
 
-        const sellRoute = new Route([pair], tokenIn)
-        const trade = new Trade(sellRoute, new TokenAmount(tokenIn, ethers.utils.parseUnits(self.buyOrder.amountGiven, decimals), TradeType.EXACT_INPUT))
+        let tokenContract = new ethers.Contract(
+            newTokenAddress,
+            ['function decimals() external pure returns (uint8)'],
+            this.account
+        );
+
+        try {
+            //Get decimals
+            liquidityDecimals = await liquidityContract.decimals();
+            newtokenDecimals = await tokenContract.decimals();
+
+            //Token 0
+            token0 = await liquidityContract.token0();
+
+        } catch (error) {
+            console.log(error);
+
+            //Set up status as failed
+            await buyOrderService.update({
+                buyOrder : this.buyOrder.id,
+                label : this.buyOrder.label,
+                address: this.buyOrder.address,
+                slippage: this.buyOrder.slippage,
+                amountGiven: this.buyOrder.amountGiven,
+                statusId: 2
+            });
+        }
+
+        const pair = methods.contructPair(token0, this.currencyToken, this.currencyDecimals, 
+                                                  tokenOutAddress, newTokenDecimals,
+                                                  ChainId.BSCMAINNET, pairAddress,
+                                                  liquidityDecimals, this.account);
+
+        const sellRoute = new Route([pair], this.currencyToken)
+        const trade = new Trade(sellRoute, new TokenAmount(this.currencyToken, ethers.utils.parseUnits(this.buyOrder.amountGiven, this.currencyDecimals), TradeType.EXACT_INPUT))
 
         //Set up parameters
-        const slippageTolerance = new Percent(self.buyOrder.slippage, '100') 
+        const slippageTolerance = new Percent(this.buyOrder.slippage, '100') 
         const amountOutMin = trade.minimumAmountOut(slippageTolerance).raw
-        const path = [tokenIn, tokenOut]
-        const to = self.bot.walletAddress
+        const path = [this.currencyToken, tokenOutAddress]
+        const to = this.bot.walletAddress
         const deadline = Math.floor(Date.now() / 1000) + 60 * 20 
         const value = trade.inputAmount.raw 
 
         //Set up router
         const router = new ethers.Contract(
-            self.router,
-            [
-              'function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts);',
-            ],
-            self.account
+            this.router,
+            ['function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts);'],
+            this.account
           );
 
         //Perform trade
         const tx = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
         const receipt = await tx.wait();
-
+        
+        console.log('Buy Order receipt: ' + receipt);
+        
         //Get status
         const status = receipt.status == 0 ? 2 : 3;
 
         //Update buy order
         await buyOrderService.update({
-            buyOrder : self.buyOrder.id,
-            label : self.buyOrder.label,
-            address: self.buyOrder.address,
-            slippage: self.buyOrder.slippage,
-            amountGiven: self.buyOrder.amountGiven,
+            buyOrder : this.buyOrder.id,
+            label : this.buyOrder.label,
+            address: this.buyOrder.address,
+            slippage: this.buyOrder.slippage,
+            amountGiven: this.buyOrder.amountGiven,
             statusId: status
         })
 
         //Removes all listener for safety
-        self.mintContract.removeAllListeners();
+        this.mintContract.removeAllListeners();
     }
 
     //Starts listening to mint event
     start(){
-
-        //Initializes the contract
-        const provider = new ethers.providers.WebSocketProvider(this.provider);
-        const wallet = ethers.Wallet(this.bot.walletPrivate);
-        this.account = wallet.connect(provider);
-
         this.mintContract = new ethers.Contract(
                                 buyOrder.address,
                                 ['event Mint(address indexed sender, uint amount0, uint amount1);'],
@@ -83,7 +122,7 @@ class Bot{
                             );
 
         //Set up the the funnctions
-        this.mintContract.on('Mint', this.onMint);
+        this.mintContract.on('Mint', this.onMint.bind(this));
     }
 
     //Stops listening

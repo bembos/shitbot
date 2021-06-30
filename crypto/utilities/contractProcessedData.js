@@ -7,6 +7,7 @@ class ContractProcessedData {
         this.pairToken0 = pairToken0;
         this.marketCap = marketCap;
         this.liquidity = liquidity;
+        this.liquiditydecimals = liquidityDecimals;
         this.sourceCode = sourceCode;
     }
 } 

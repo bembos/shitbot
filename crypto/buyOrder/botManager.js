@@ -1,3 +1,4 @@
+const { currencyEquals } = require('@uniswap/sdk');
 const Bot = require('./bot');
 
 class BotManager {
@@ -6,7 +7,9 @@ class BotManager {
     activeBots = [];
 
     //Constructs a new instance of the bot manager with the pair emitter
-    constructor(router, provider) {
+    constructor(currencyTokenAddress, currencyDecimals, router, provider) {
+        this.currencyTokenAddress = currencyTokenAddress;
+        this.currencyDecimals = currencyDecimals;
         this.router = router;
         this.provider = provider;
     }
@@ -14,7 +17,7 @@ class BotManager {
     //Attaches a BotListener callback function to the given event emitter. Saves the reference in array
     start(botData) {
 
-        let bot = new Bot(botData, this.router, this.provider);
+        let bot = new Bot(botData, this.router, this.provider, this.currencyTokenAddress, this.currencyDecimals);
 
         bot.start();
 

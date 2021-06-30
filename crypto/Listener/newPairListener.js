@@ -108,6 +108,7 @@ class NewPairListener {
         let uniswapToken;
         let uniswapPair;
         let token0;
+        let liquidityDecimals;
 
         console.log('DEFINITIONS DONE')
         
@@ -118,7 +119,7 @@ class NewPairListener {
             console.log('owner: ' + owner);
 
             //Get decimals
-            let liquidityDecimals = await liquidityContract.decimals();
+            liquidityDecimals = await liquidityContract.decimals();
             let tokenDecimals = await tokenContract.decimals();
 
             //Get total liquidity tokens
@@ -177,7 +178,7 @@ class NewPairListener {
             console.log('How much BUSD is 1 BNB: ' + currencyInStablePrice);
 
             uniswapCurrencyToken = new Token(ChainId.BSCMAINNET, this.currencyTokenAddress, 18)
-            uniswapToken = new Token(ChainId.BSCMAINNET, newTokenAddress, tokenDecimals)
+            uniswapToken         = new Token(ChainId.BSCMAINNET, newTokenAddress, tokenDecimals)
           
             const tokens = [uniswapCurrencyToken, uniswapToken]
             const [tokenA, tokenB] = tokens[0].sortsBefore(tokens[1]) ? tokens : [tokens[1], tokens[0]]
@@ -231,7 +232,7 @@ class NewPairListener {
             tokenHolders.holders.push({address: owner, value: tokenOwnerBalance});
         }
 
-        return [new ContractProcessedData(uniswapCurrencyToken, uniswapToken, pairAddress, token0, marketCap, liquidity, sourceCode)];
+        return [new ContractProcessedData(uniswapCurrencyToken, uniswapToken, pairAddress, token0, marketCap, liquidity, liquidityDecimals, sourceCode)];
     }
 
     transferTracking(tokenHolders, liquidityHolders, tokenOut, pairAddress) {

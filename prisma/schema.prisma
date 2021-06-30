@@ -40,6 +40,7 @@ model BuyOrder {
   id                Int             @id @default(autoincrement())
   label             String?
   address           String
+  pairAddress       String          @map(name: "pair_address")
   slippage          Int
   amountGiven       Float           @map(name: "amount_given")
   autoMultiplier    Float?          @map(name: "auto_multiplier")
@@ -177,6 +178,7 @@ model UserContractCodeCons {
   @@map(name: "user_contract_code_cons")
 }
 
+//Tables not used right now. This is handled in memory for now. Will see if it is needed later on.
 model Token {
   id           Int      @id @default(autoincrement())
   address      String  

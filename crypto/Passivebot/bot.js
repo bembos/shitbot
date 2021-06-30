@@ -1,6 +1,6 @@
 //Ethers.js
 const { ethers } = require('ethers'); 
-const { ChainId, Route, Trade, TradeType, TokenAmount, Percent } = require('@uniswap/sdk');
+const { Route, Trade, TradeType, TokenAmount, Percent } = require('@uniswap/sdk');
 
 //Services
 const tradeWindowService = require('../../services/tradeWindow');
@@ -9,6 +9,8 @@ const transactionService = require('../../services/transaction');
 
 //Utilities
 const sleepHelper = require('../utilities/sleep');
+const ChainId = require('../utilities/chainId');
+const methods = require('../utilities/methods');
 
 class Bot {
 
@@ -40,7 +42,7 @@ class Bot {
         if (transactions.number > bot.maxTransaction) return;
 
         //If it is successfuly validated
-        if (await self.validate(contractProcessedData, tokenTracking, liquidityTracking)) {
+        if (await this.validate(contractProcessedData, tokenTracking, liquidityTracking)) {
 
             //Increase a number of transactions
             transactions.number = transactions.number + 1
@@ -48,27 +50,10 @@ class Bot {
             const currencyToken = contractProcessedData.currencyToken;
             const newToken      = contractProcessedData.newToken;
 
-            //Get new reserves for pair
-            const liquidityContract = new ethers.Contract(
-                contractProcessedData.pairAddress,
-                ['function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)'],
-                this.account
-              );
-            
-            //Construct pair
-            const reserves = await liquidityContract.getReserves(); 
-
-            let parsedReserves = [];
-            parsedReserves[0] = ethers.utils.formatUnits(reserves[0], liquidityDecimals);
-            parsedReserves[1] = ethers.utils.formatUnits(reserves[1], liquidityDecimals);
-
-            if (contractProcessedData.token0 != currencyToken.address) {
-                let temp = parsedReserves[0]
-                parsedReserves[0] = parsedReserves[1];
-                parsedReserves[1] = temp; 
-            }
-            
-            const pair = new Pair(new TokenAmount(currencyToken, parsedReserves[0]), new TokenAmount(newToken, parsedReserves[1]))
+            const pair = methods.contructPair(contractProcessedData.token0, currencyToken.address, currencyToken.decimals, 
+                                                                            newToken.address, newToken.decimals,
+                                                                            ChainId.BSCMAINNET, contractProcessedData.pairAddress,
+                                                                            contractProcessedData.liquidityDecimals, this.account);
 
             //Create a trade window
             let tradeWindow = await tradeWindowService.create({
@@ -130,14 +115,15 @@ class Bot {
                 return;
             }
 
-            //Get account balance
+            //Get account balance.
+            //Should work as it is previously used
             router = new ethers.Contract(
                 newToken.address,
                 ['function balanceOf(address account) public view override returns (uint256)'],
                 this.account
             )
 
-            const currentTokens = await contract.balanceOf(self.bot.walletAddress);
+            const currentTokens = await contract.balanceOf(this.bot.walletAddress);
             currentTokens = ethers.utils.formatUnits(currentTokens, currencyToken.decimals);
 
             //Create log
@@ -149,7 +135,7 @@ class Bot {
             //Create transaction
             await transactionService.create({
                 tokenGiven : currencyToken.address,
-                givenAmount : self.bot.initialAmount,
+                givenAmount : this.bot.initialAmount,
                 tokenReceived : newToken.address,
                 receivedAmount : currentTokens,
                 transactionStatusId : 1,
@@ -157,20 +143,25 @@ class Bot {
             })
 
             //Pass the trade to the job queue
-            self.queue.add('sellSwap', {
-                currencyToken: currencyToken.address,
-                newTokenAdress: newToken.address,
+            this.queue.add('sellSwap', {
+                currencyTokenAddress: currencyToken.address,
+                currencyDecimals: currencyToken.decimals,
+                pairAddress: contractProcessedData.pairAddress,
+                token0: contractProcessedData.token0,
+                newTokenAddress: newToken.address,
+                newTokenDecimals: newToken.decimals,
+                liquidityDecimals: contractProcessedData.liquidityDecimals,
                 tradeWindowId: tradeWindow.id,
-                multiplier: self.bot.autoMultiplier,
-                initialAmount: self.bot.initialAmount,
-                slippage: self.bot.slippage,
-                walletAddress: self.bot.walletAddress,
-                walletPrivate: self.bot.walletPrivate,
+                multiplier: this.bot.autoMultiplier,
+                initialAmount: this.bot.initialAmount,
+                slippage: this.bot.slippage,
+                walletAddress: this.bot.walletAddress,
+                walletPrivate: this.bot.walletPrivate,
                 currentTokens: currentTokens,
-                routerAddress: self.router,
-                maxTime: self.bot.maxTime,
-                provider: providerAddress,
-                transactions : transactions
+                routerAddress: this.router,
+                maxTime: this.bot.maxTime,
+                provider: this.provider,
+                transactions : transactions,
             });
         }
     }
@@ -179,13 +170,13 @@ class Bot {
     async validate(contractProcessedData, tokenTracking, liquidityTracking) {
 
         //Validate Time based constraints
-        if (self.generalConfCons.timeBased) {
+        if (this.generalConfCons.timeBased) {
 
             //Sleep the required amount of time
             await sleepHelper.sleep(generalConfCons.timeForChecks * 1000);
 
             //Check owner renounced
-            if (self.generalConfCons.ownerRenounced) {
+            if (this.generalConfCons.ownerRenounced) {
 
                 //Perform owner checkup
                 let tokenContract = new ethers.Contract(
@@ -201,47 +192,47 @@ class Bot {
             }
 
             //Check for maxLiqTokInAddress
-            if (self.generalConfCons.maxLiqTokInAddress != 0 && liquidityTracking.holders.length) {
+            if (this.generalConfCons.maxLiqTokInAddress != 0 && liquidityTracking.holders.length) {
                 let maxLiquidityHolder = liquidityTracking.holders[0];
 
-                if (maxLiquidityHolder.value > self.generalConfCons.maxLiqTokInAddress) return false;
+                if (maxLiquidityHolder.value > this.generalConfCons.maxLiqTokInAddress) return false;
             }
 
             //Check for maxTokInAddress
-            if (self.generalConfCons.maxTokInAddress != 0 && tokenTracking.holders.length) {
+            if (this.generalConfCons.maxTokInAddress != 0 && tokenTracking.holders.length) {
                 let maxHolder = tokenTracking.holders[0];
 
-                if (maxHolder.value > self.generalConfCons.maxTokInAddress) return false;
+                if (maxHolder.value > this.generalConfCons.maxTokInAddress) return false;
             }
 
             //Check for minNumberOfTxs
-            if (self.generalConfCons.minNumberOfTxs != 0) {
+            if (this.generalConfCons.minNumberOfTxs != 0) {
 
-                if (self.generalConfCons.minNumberOfTxs > tokenTracking.numberTxs) return false;
+                if (this.generalConfCons.minNumberOfTxs > tokenTracking.numberTxs) return false;
             }
 
             //Check for minNumberOfHolders
-            if (self.generalConfCons.minNumberOfHolders != 0) {
+            if (this.generalConfCons.minNumberOfHolders != 0) {
 
-                if (self.generalConfCons.minNumberOfHolders > tokenTracking.holders.length) return false;
+                if (this.generalConfCons.minNumberOfHolders > tokenTracking.holders.length) return false;
             }
         }
 
         //1. Market cap
-        if (self.generalConfCons.marketCap) {
+        if (this.generalConfCons.marketCap) {
 
             let contractMarketCap = contractProcessedData.marketCap;
 
-            if (contractMarketCap < self.generalConfCons.minCap || contractMarketCap > self.generalConfCons.maxCap) return false;
+            if (contractMarketCap < this.generalConfCons.minCap || contractMarketCap > this.generalConfCons.maxCap) return false;
             
         }
 
         //2. Liquidity
-        if (self.generalConfCons.liquidity) {
+        if (this.generalConfCons.liquidity) {
 
             let contractLiquidity = contractProcessedData.liquidity;
 
-            if (contractLiquidity < self.generalConfCons.minLiq || contractLiquidity > self.generalConfCons.maxLiq) return false;
+            if (contractLiquidity < this.generalConfCons.minLiq || contractLiquidity > this.generalConfCons.maxLiq) return false;
             
         }
 
@@ -249,7 +240,7 @@ class Bot {
         let contractCode = contractProcessedData.sourceCode;
 
         //Iterate over all contract constraints to check in code
-        for (let cons of self.contractCodeCons) {
+        for (let cons of this.contractCodeCons) {
 
             let includesCode = contractCode.includes(cons.sourceCode);
 
@@ -266,9 +257,13 @@ class Bot {
         tradeData = job.data;
 
         //Set Initial parameters (serializable)
-        const currencyTokenAddress = tradeData.currencyToken;
+        const currencyTokenAddress = tradeData.currencyTokenAddress;
         const newTokenAddress = tradeData.newTokenAddress;
-
+        const pairAddress = tradeData.pairAddress;
+        const token0 = tradeData.token0;
+        const currencyDecimals = tradeData.currencyDecimals;
+        const newTokenDecimals = tradeData.newTokenDecimals;
+        const liquidityDecimals = tradeData.liquidityDecimals;
         const tradeWindowId = tradeData.tradeWindowId;
         const multiplier = tradeData.multiplier;
         const initialAmount = tradeData.initialAmount;
@@ -280,10 +275,11 @@ class Bot {
         const maxTime = tradeData.maxTime ? tradeData.maxTime : 300;
 
         //Initialize required parameters
-        const provider = ethers.providers.WebSocketProvider(tradeData.provider)
-        const wallet   = ethers.Wallet(walletPrivate);
-        const account  = wallet.connect(provider);
+        const etherProvider = new ethers.providers.WebSocketProvider(tradeData.provider);
+        const wallet        = new ethers.Wallet(walletPrivate);
+        const account       = wallet.connect(etherProvider);
 
+        //Initialize routers
         const router = new ethers.Contract(
             routerAddress,
             [
@@ -292,21 +288,18 @@ class Bot {
             account
         );
         
-        //Fetch again token data
-        const newtoken      = await Fetcher.fetchTokenData(ChainId.MAINNET, newTokenAddress, provider);
-        const currencyToken = await Fetcher.fetchTokenData(ChainId.MAINNET, currencyTokenAddress, provider);
-        const pair          = await Fetcher.fetchPairData(currencyToken, newToken, provider);
-
-        const decimals = newtoken.decimals;
-
-        const sellRoute = new Route([pair], newToken)
-        const trade = new Trade(sellRoute, new TokenAmount(newToken, ethers.utils.parseUnits(currentTokens, decimals), TradeType.EXACT_INPUT))
-
-        //Create a timeout for the sell timer
-
         //Send a request for the price every 5 seconds
         let sellTimer = setInterval(async () => {
-            //Check current price
+            //Check execution price
+            const pair = methods.contructPair(token0, currencyTokenAddress, currencyDecimals, 
+                                              newTokenAddress, newTokenDecimals,
+                                              ChainId.BSCMAINNET, pairAddress,
+                                              liquidityDecimals, account);
+            
+            const route = new Route([pair], newTokenAddress)
+
+            const trade = new Trade(route, new TokenAmount(newTokenAddress, ethers.utils.parseUnits(currentTokens, newTokenDecimals)), TradeType.EXACT_INPUT)                                  
+
             const currencyIfSwapped = trade.executionPrice.toSignificant(6);
 
             //If the amount given is the desired amount
@@ -315,7 +308,7 @@ class Bot {
                 //Approve the token
                 let abi = ["function approve(address _spender, uint256 _value) public returns (bool success)"];
                 let contract = new ethers.Contract(newTokenAddress, abi, account);
-                await contract.approve(router, ethers.utils.parseUnits(currentTokens, decimals));
+                await contract.approve(router, ethers.utils.parseUnits(currentTokens, newTokenDecimals));
 
                 //Create log
                 await logMessageService.create({
