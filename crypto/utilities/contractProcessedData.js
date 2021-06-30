@@ -1,9 +1,8 @@
 class ContractProcessedData {
 
-    constructor(currencyToken, newToken, pair, marketCap, liquidity, sourceCode) {
-        this.currencyToken = currencyToken;
-        this.newToken = newToken;
-        this.pair = pair;
+    constructor(currencyTokenAddress, newTokenAddress, marketCap, liquidity, sourceCode) {
+        this.currencyTokenAddress = currencyTokenAddress;
+        this.newTokenAddress = newTokenAddress;
         this.marketCap = marketCap;
         this.liquidity = liquidity;
         this.sourceCode = sourceCode;

@@ -17,12 +17,12 @@ class PancakeSwapIntegration {
 
     initialize(redisConnection) {
 
-        let currencyTokenAddress = process.env.WBNB_ADDRESS_TEST;
-        let stableTokenAddress = process.env.BUSD_ADDRESS_TEST;
-        let factoryAddress = process.env.PANCAKE_FACTORY_TEST;
-        let router = process.env.PANCAKE_ROUTER_TEST;
-        let provider = process.env.WEBSOCKET_PROVIDER_TEST;
-        let burnAddress = process.env.BURN_ADDRESS_TEST;
+        let currencyTokenAddress = process.env.WBNB_ADDRESS;
+        let stableTokenAddress = process.env.BUSD_ADDRESS;
+        let factoryAddress = process.env.PANCAKE_FACTORY;
+        let router = process.env.PANCAKE_ROUTER;
+        let provider = process.env.WEBSOCKET_PROVIDER;
+        let burnAddress = process.env.BURN_ADDRESS;
         let walletToPowerTrades = process.env.WALLET_PRIVATE;
         
         this.newPairListener = new NewPairListener(currencyTokenAddress, stableTokenAddress, factoryAddress, provider, burnAddress, walletToPowerTrades, router)
