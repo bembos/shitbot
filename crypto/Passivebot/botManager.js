@@ -40,7 +40,7 @@ class BotManager {
         let botNewTokenListener = async function (contractProcessedData, tokenTracking, liquidityTracking) {
 
             setImmediate(() => {
-                bot.onNewTokenHandler(contractProcessedData, tokenTracking, liquidityTracking, transactions);
+                bot.onNewTokenHandler(contractProcessedData, tokenTracking, liquidityTracking, transactions).bind(bot);
             })
         }
 
@@ -50,7 +50,7 @@ class BotManager {
 
         //Listen to pair created event
         this.newPairEventEmitter.newTokenEvent.on('newToken', botNewTokenListener);   
-          
+
     }
 
     //Retrieves botlistener instance from active bots array, detaches event and deletes queue

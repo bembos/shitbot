@@ -1,6 +1,6 @@
 //Ethers.js
 const ethers = require('ethers');
-const { Token, Fetcher, Route, Trade, TradeType, TokenAmount } = require('@uniswap/sdk');
+const { Token, Route, Trade, TradeType, TokenAmount, Pair } = require('@uniswap/sdk');
 
 
 //Basic event class
@@ -37,6 +37,11 @@ class NewPairListener {
         let etherProvider = new ethers.providers.WebSocketProvider(providerAddress);
         let wallet        = new ethers.Wallet(walletAddress);
         this.provider     = wallet.connect(etherProvider);
+
+        //Set up event listener
+        this.newTokenEvent = new event.EventEmitter();
+        this.newTokenEvent.setMaxListeners(0);
+        
 
         //Reference to listener functions
         this.listenerHandler = this.onNewContract.bind(this);
@@ -75,9 +80,7 @@ class NewPairListener {
              'function totalSupply() public view override returns (uint256) ',
              'function balanceOf(address account) public view override returns (uint256)',
              'function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)',
-             'function decimals() external pure returns (uint8)',
-             'function price0CumulativeLast() external view returns (uint)',
-             'function price1CumulativeLast() external view returns (uint)'],
+             'function decimals() external pure returns (uint8)'],
             this.provider
           );
 
@@ -99,8 +102,12 @@ class NewPairListener {
         let liquidityOwnerBalance;
         let tokenOwnerBalance;
         let currencyInStablePrice;
-        let newTokenInStablePrice;
+        let newTokenInCurrencyPrice;
         let parsedReserves = [];
+        let uniswapCurrencyToken;
+        let uniswapToken;
+        let uniswapPair;
+        let token0;
 
         console.log('DEFINITIONS DONE')
         
@@ -130,7 +137,7 @@ class NewPairListener {
             console.log('liquidity owner balance: ' + liquidityOwnerBalance);
 
             //Liquidiy reserves
-            let token0 = await liquidityContract.token0();
+            token0 = await liquidityContract.token0();
             let reserves = await liquidityContract.getReserves()
 
             parsedReserves[0] = ethers.utils.formatUnits(reserves[0], liquidityDecimals);
@@ -163,32 +170,26 @@ class NewPairListener {
             //Get how much 1 token of currency (BNB) is in stable (usd)
             let result = await pancakeSwapRouter.getAmountsOut(
                 1,
-                [ethers.utils.getAddress(this.currencyTokenAddress), ethers.utils.getAddress(this.stableTokenAddress)], 
-                { 
-                    gasLimit: ethers.utils.hexlify(300000), 
-                    gasPrice: ethers.utils.parseUnits("9", "gwei")
-                }
+                [ethers.utils.getAddress(this.currencyTokenAddress), ethers.utils.getAddress(this.stableTokenAddress)]
             )
 
             currencyInStablePrice = result[1].toNumber();
-            console.log('How much $ is 1 BNB: ' + currencyInStablePrice);
-            
-            //Get how much 1 token of the new token (XYZ) is in stable (usd)
-            
-            let newTokenInStablePrice0 = await liquidityContract.price0CumulativeLast();
-            let newTokenInStablePrice1 = await liquidityContract.price1CumulativeLast();
+            console.log('How much BUSD is 1 BNB: ' + currencyInStablePrice);
 
-            console.log(newTokenInStablePrice0.toNumber())
-            console.log(newTokenInStablePrice1.toNumber())
+            uniswapCurrencyToken = new Token(ChainId.BSCMAINNET, this.currencyTokenAddress, 18)
+            uniswapToken = new Token(ChainId.BSCMAINNET, newTokenAddress, tokenDecimals)
+          
+            const tokens = [uniswapCurrencyToken, uniswapToken]
+            const [tokenA, tokenB] = tokens[0].sortsBefore(tokens[1]) ? tokens : [tokens[1], tokens[0]]
+          
+            uniswapPair = new Pair(new TokenAmount(tokenA, reserves[0]), new TokenAmount(tokenB, reserves[1]))
+            const route = new Route([uniswapPair], token)
 
-            if (token0  == this.currencyTokenAddress) {
-                console.log('result 0: How much $ is 1 new token: ' + ethers.utils.formatUnits(newTokenInStablePrice0, 18))
-                console.log('result 1: How much $ is 1 new token: ' + ethers.utils.formatUnits(newTokenInStablePrice1, tokenDecimals))
-            } else {
-                console.log('result 0: How much $ is 1 new token: ' + ethers.utils.formatUnits(newTokenInStablePrice0, tokenDecimals))
-                console.log('result 1: How much $ is 1 new token: ' + ethers.utils.formatUnits(newTokenInStablePrice1, 18))
-            }
-           
+            const trade = new Trade(route, new TokenAmount(token, ethers.utils.parseUnits('1', tokenDecimals)), TradeType.EXACT_INPUT)
+            
+            newTokenInCurrencyPrice = trade.executionPrice.toFixed(15);
+            console.log('Trade price for 1 token in BNB: ' + newTokenInCurrencyPrice);
+
             
         } catch (error) {
             console.log(error);
@@ -203,13 +204,15 @@ class NewPairListener {
 
         //Retrieve execution price of both tokens and calculate liquidity pool 
         let currencyReserveTotal = currencyReserve * currencyInStablePrice;
-        let newTokenReserveTotal = newTokenReserve * newTokenInStablePrice; 
+        let newTokenReserveTotal = newTokenReserve * newTokenInCurrencyPrice * currencyInStablePrice; 
         liquidity = newTokenReserveTotal + currencyReserveTotal;
 
         console.log("liquidity: " + liquidity);
 
         totalLiquidityTokens         = totalLiquidityTokens - liquidityBurned;
         liquidityHolders.totalSupply = totalLiquidityTokens; 
+
+        console.log('Total Token Supply not burnt: ' + totalLiquidityTokens);
 
         //If the owner has balance add it as a holder
         if (liquidityOwnerBalance) {
@@ -218,19 +221,17 @@ class NewPairListener {
 
         //**Process marketcap *//
         tokenTotalSupply         = tokenTotalSupply - tokenBurned;
-        marketCap                = tokenTotalSupply * newTokenInStablePrice;
+        marketCap                = tokenTotalSupply * newTokenInCurrencyPrice * currencyInStablePrice;
         tokenHolders.totalSupply = tokenTotalSupply
 
-        console.log("marketCap: " + marketCap, "total supply: " + tokenTotalSupply)
+        console.log("marketCap: " + marketCap)
         
         //If the owner has balance add it as a holder
         if (tokenOwnerBalance) {
             tokenHolders.holders.push({address: owner, value: tokenOwnerBalance});
         }
 
-        console.log('Token Holders: ' + tokenHolders.holders, 'Liquidity Holders: ' + liquidityHolders.holders)
-
-        return [new ContractProcessedData(this.currencyTokenAddress, newTokenAddress, marketCap, liquidity, sourceCode, this.providerAddress)];
+        return [new ContractProcessedData(uniswapCurrencyToken, uniswapToken, pairAddress, token0, marketCap, liquidity, sourceCode)];
     }
 
     transferTracking(tokenHolders, liquidityHolders, tokenOut, pairAddress) {
@@ -360,7 +361,7 @@ class NewPairListener {
         setTimeout(() => {
             tokenRouter.removeAllListeners();
             liquidityRouter.removeAllListeners();
-        }, 600000)
+        }, 300000)
 
         return [tokenHolders, liquidityHolders];
     }
@@ -416,7 +417,6 @@ class NewPairListener {
         //Process the data
         let contractProcessedData = await this.processData(tokenOut, pairAddress, tokenHolders, liquidityHolders);
 
-/*
         //Process new token contract if basic checks are successful
         if (contractProcessedData) {
 
@@ -424,16 +424,13 @@ class NewPairListener {
             transferTracking(tokenIn, TokenOut, pairAddress);
 
             newTokenEvent.emit('newToken', contractProcessedData, tokenTracking, liquidityTracking);
-        } */
+        } 
     }
 
     //Starts listening to pancake factory
     async start() {
         console.log('Listening');
 
-        this.newTokenEvent = new event.EventEmitter();
-        this.newTokenEvent.setMaxListeners(0);
-        
         //Set up a contract with the pancake swap factory
         this.factory = new ethers.Contract(
             this.factoryAddress,
