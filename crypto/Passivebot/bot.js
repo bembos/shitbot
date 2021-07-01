@@ -38,11 +38,15 @@ class Bot {
     //Function called when a new token is given to the bot
     onNewToken = async function (contractProcessedData, tokenTracking, liquidityTracking, transactions) {
 
+        console.log('on new token: ' + contractProcessedData.newToken.address);
+
         //Check number of trades
         if (transactions.number > bot.maxTransaction) return;
 
         //If it is successfuly validated
         if (await this.validate(contractProcessedData, tokenTracking, liquidityTracking)) {
+
+            console.log('passed validation: ' + contractProcessedData.newToken.address)
 
             //Increase a number of transactions
             transactions.number = transactions.number + 1
@@ -83,7 +87,10 @@ class Bot {
 
             //Perform the trade
             let receipt;
+            
+            console.log('before buying: ' + contractProcessedData.newToken.address)
 
+            /*
             try {
                 const tx = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
 
@@ -115,6 +122,7 @@ class Bot {
                 return;
             }
 
+            
             //Get account balance.
             //Should work as it is previously used
             router = new ethers.Contract(
@@ -162,7 +170,7 @@ class Bot {
                 maxTime: this.bot.maxTime,
                 provider: this.provider,
                 transactions : transactions,
-            });
+            });*/
         }
     }
 
