@@ -40,7 +40,7 @@ class BotManager {
         let botNewTokenListener = async function (contractProcessedData, tokenTracking, liquidityTracking) {
 
             setImmediate(() => {
-                bot.onNewTokenHandler(contractProcessedData, tokenTracking, liquidityTracking, transactions).bind(bot);
+                bot.onNewTokenHandler(contractProcessedData, tokenTracking, liquidityTracking, transactions);
             })
         }
 

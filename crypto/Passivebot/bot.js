@@ -38,21 +38,21 @@ class Bot {
     //Function called when a new token is given to the bot
     onNewToken = async function (contractProcessedData, tokenTracking, liquidityTracking, transactions) {
 
-        console.log('on new token: ' + contractProcessedData.newToken.address);
+        console.log('on new token: ' + contractProcessedData.uniswapNewtoken.address);
 
         //Check number of trades
-        if (transactions.number > bot.maxTransaction) return;
+        if (transactions.number > this.bot.maxTransaction) return;
 
         //If it is successfuly validated
         if (await this.validate(contractProcessedData, tokenTracking, liquidityTracking)) {
 
-            console.log('passed validation: ' + contractProcessedData.newToken.address)
+            console.log('passed validation: ' + contractProcessedData.uniswapNewtoken.address)
 
             //Increase a number of transactions
             transactions.number = transactions.number + 1
    
-            const currencyToken = contractProcessedData.currencyToken;
-            const newToken      = contractProcessedData.newToken;
+            const currencyToken = contractProcessedData.uniswapCurrencyToken;
+            const newToken      = contractProcessedData.uniswapNewtoken;
 
             const pair = methods.contructPair(contractProcessedData.token0, currencyToken.address, currencyToken.decimals, 
                                                                             newToken.address, newToken.decimals,
@@ -88,7 +88,7 @@ class Bot {
             //Perform the trade
             let receipt;
             
-            console.log('before buying: ' + contractProcessedData.newToken.address)
+            console.log('before buying: ' + contractProcessedData.uniswapNewtoken.address)
 
             /*
             try {
@@ -180,8 +180,12 @@ class Bot {
         //Validate Time based constraints
         if (this.generalConfCons.timeBased) {
 
+            console.log('Sleep')
+
             //Sleep the required amount of time
-            await sleepHelper.sleep(generalConfCons.timeForChecks * 1000);
+            await sleepHelper.sleep(this.generalConfCons.timeForChecks * 1000);
+
+            console.log('Woke up')
 
             //Check owner renounced
             if (this.generalConfCons.ownerRenounced) {
@@ -192,31 +196,53 @@ class Bot {
                     ['function owner() public view returns (address)'],
                     this.account
                 );
+                
+                let owner;
 
-                //Retrieve owner and compare to dead address
-                let owner = await tokenContract.owner();
+                //Retrieve owner and compare to dead address. Should work
+                try {
+                    owner = await tokenContract.owner();                    
+                } catch (error) {
+                    console.log(error);
+                    return false;
+                }
                 
                 if (owner != "0x0000000000000000000000000000000000000000") return false;
             }
 
             //Check for maxLiqTokInAddress
             if (this.generalConfCons.maxLiqTokInAddress != 0 && liquidityTracking.holders.length) {
-                let maxLiquidityHolder = liquidityTracking.holders[0];
 
-                if (maxLiquidityHolder.value > this.generalConfCons.maxLiqTokInAddress) return false;
+                let maxLiquidityHolder;
+
+                liquidityTracking.holders.forEach(holder => {
+                    if (!holder.contract && !maxHolder) {
+                        maxLiquidityHolder = holder;
+                    }
+                });
+
+                if (maxLiquidityHolder.value / liquidityTracking.totalSupply * 100 > this.generalConfCons.maxLiqTokInAddress) return false;
             }
 
             //Check for maxTokInAddress
             if (this.generalConfCons.maxTokInAddress != 0 && tokenTracking.holders.length) {
-                let maxHolder = tokenTracking.holders[0];
 
-                if (maxHolder.value > this.generalConfCons.maxTokInAddress) return false;
+                let maxHolder;
+
+                tokenTracking.holders.forEach(holder => {
+                    if (!holder.contract && !maxHolder) {
+                        maxHolder = holder;
+                    }
+                });
+
+                if (maxHolder.value / tokenTracking.totalSupply * 100 > this.generalConfCons.maxTokInAddress) return false;
             }
 
             //Check for minNumberOfTxs
             if (this.generalConfCons.minNumberOfTxs != 0) {
 
                 if (this.generalConfCons.minNumberOfTxs > tokenTracking.numberTxs) return false;
+
             }
 
             //Check for minNumberOfHolders
@@ -231,7 +257,7 @@ class Bot {
 
             let contractMarketCap = contractProcessedData.marketCap;
 
-            if (contractMarketCap < this.generalConfCons.minCap || contractMarketCap > this.generalConfCons.maxCap) return false;
+            if (contractMarketCap > this.generalConfCons.minCap || contractMarketCap < this.generalConfCons.maxCap) return false;
             
         }
 
@@ -240,15 +266,18 @@ class Bot {
 
             let contractLiquidity = contractProcessedData.liquidity;
 
-            if (contractLiquidity < this.generalConfCons.minLiq || contractLiquidity > this.generalConfCons.maxLiq) return false;
-            
+            if (contractLiquidity > this.generalConfCons.minLiq || contractLiquidity < this.generalConfCons.maxLiq) return false;
         }
 
         //3. Coding
         let contractCode = contractProcessedData.sourceCode;
 
+        console.log(contractCode);
+
         //Iterate over all contract constraints to check in code
         for (let cons of this.contractCodeCons) {
+
+            console.log('Checking for: ' + cons.sourceCode);
 
             let includesCode = contractCode.includes(cons.sourceCode);
 
