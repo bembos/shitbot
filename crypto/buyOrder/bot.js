@@ -86,14 +86,21 @@ class Bot{
         //Set up router
         const router = new ethers.Contract(
             this.router,
-            ['function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts);'],
+            ['function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)'],
             this.account
           );
-
-        //Perform trade
-        const tx = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
-        const receipt = await tx.wait();
         
+        let receipt = { status : 0 };
+
+        try {
+             //Perform trade
+            const tx = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
+            receipt = await tx.wait();
+        } catch (error) {
+            console.log(error);
+            console.log(receipt);
+        }
+       
         console.log('Buy Order receipt: ' + receipt);
         
         //Get status

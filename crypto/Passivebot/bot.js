@@ -40,8 +40,6 @@ class Bot {
     //Function called when a new token is given to the bot
     onNewToken = async function (contractProcessedData, tokenTracking, liquidityTracking, transactions) {
 
-        console.log('Transactions: ' + transactions.number)
-
         //Check number of trades
         if (transactions.number > this.bot.maxTransaction) return;
 
@@ -57,9 +55,9 @@ class Bot {
             const newToken      = contractProcessedData.uniswapNewtoken;
 
             const pair = await methods.contructPair(contractProcessedData.pairToken0, currencyToken.address, currencyToken.decimals, 
-                                                                                newToken.address, newToken.decimals,
-                                                                                ChainId.BSCMAINNET, contractProcessedData.pairAddress,
-                                                                                contractProcessedData.liquidityDecimals, this.account);
+                                                                                      newToken.address, newToken.decimals,
+                                                                                      ChainId.BSCMAINNET, contractProcessedData.pairAddress,
+                                                                                      contractProcessedData.liquidityDecimals, this.account);
 
             //Create a trade window
             let tradeWindow = await tradeWindowService.create({
