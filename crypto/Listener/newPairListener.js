@@ -67,8 +67,6 @@ class NewPairListener {
 
         sourceCode = response.data.result[0].SourceCode
 
-        console.log('source code: ' + sourceCode);
-
         //**Initializes Variables for processing */
         let pancakeSwapRouter = new ethers.Contract(
             this.router,
@@ -144,11 +142,12 @@ class NewPairListener {
 
             //Check order just in case
             if (token0 != this.currencyTokenAddress) {
+                console.log("Listener entered if");
                 let temp = parsedReserves[0]
                 parsedReserves[0] = parsedReserves[1];
                 parsedReserves[1] = temp; 
             }
-            
+
             //Get total tokens
             tokenTotalSupply = await tokenContract.totalSupply();
             tokenTotalSupply = ethers.utils.formatUnits(tokenTotalSupply, tokenDecimals);
@@ -178,7 +177,7 @@ class NewPairListener {
           
             const tokens = [uniswapCurrencyToken, uniswapToken]
             const [tokenA, tokenB] = tokens[0].sortsBefore(tokens[1]) ? tokens : [tokens[1], tokens[0]]
-          
+
             uniswapPair = new Pair(new TokenAmount(tokenA, reserves[0]), new TokenAmount(tokenB, reserves[1]))
             
             const route = new Route([uniswapPair], uniswapToken)
@@ -187,7 +186,6 @@ class NewPairListener {
             
             newTokenInCurrencyPrice = trade.executionPrice.toFixed(15);
         } catch (error) {
-            console.log(error);
             return null;
         }
 
@@ -240,8 +238,6 @@ class NewPairListener {
             ['event Transfer(address indexed from, address indexed to, uint value)'],
             this.account
         );
-
-        console.log('Total supply: ' + tokenHolders.totalSupply);
 
         tokenRouter.on('Transfer', (from, to, value) => {
 

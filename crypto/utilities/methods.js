@@ -1,3 +1,4 @@
+const { Pair, TokenAmount, Token } = require('@uniswap/sdk');
 const { ethers } = require('ethers'); 
 
 exports.contructPair = async (liquidityToken0, token0Address, decimals0, token1Address, decimals1, chainId, pairAddress, liquidityDecimals, account) => {
@@ -15,15 +16,8 @@ exports.contructPair = async (liquidityToken0, token0Address, decimals0, token1A
     //Construct pair
     const reserves = await liquidityContract.getReserves(); 
 
-    let parsedReserves = [];
-    parsedReserves[0] = ethers.utils.formatUnits(reserves[0], liquidityDecimals);
-    parsedReserves[1] = ethers.utils.formatUnits(reserves[1], liquidityDecimals);
-
-    if (liquidityToken0 != token0Address) {
-        let temp = parsedReserves[0]
-        parsedReserves[0] = parsedReserves[1];
-        parsedReserves[1] = temp; 
-    }
+    const tokens = [token0, token1]
+    const [tokenA, tokenB] = tokens[0].sortsBefore(tokens[1]) ? tokens : [tokens[1], tokens[0]]
     
-    return new Pair(new TokenAmount(token0, parsedReserves[0]), new TokenAmount(token1, parsedReserves[1]))
+    return new Pair(new TokenAmount(tokenA, reserves[0]), new TokenAmount(tokenB, reserves[1]))
 }

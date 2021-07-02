@@ -67,10 +67,10 @@ class Bot{
             });
         }
 
-        const pair = methods.contructPair(token0, this.currencyToken, this.currencyDecimals, 
-                                                  tokenOutAddress, newTokenDecimals,
-                                                  ChainId.BSCMAINNET, pairAddress,
-                                                  liquidityDecimals, this.account);
+        const pair = await methods.contructPair(token0, this.currencyToken, this.currencyDecimals, 
+                                                        tokenOutAddress, newTokenDecimals,
+                                                        ChainId.BSCMAINNET, pairAddress,
+                                                        liquidityDecimals, this.account);
 
         const sellRoute = new Route([pair], this.currencyToken)
         const trade = new Trade(sellRoute, new TokenAmount(this.currencyToken, ethers.utils.parseUnits(this.buyOrder.amountGiven, this.currencyDecimals), TradeType.EXACT_INPUT))

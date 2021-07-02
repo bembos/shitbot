@@ -40,7 +40,7 @@ class Bot {
     //Function called when a new token is given to the bot
     onNewToken = async function (contractProcessedData, tokenTracking, liquidityTracking, transactions) {
 
-        console.log('on new token: ' + contractProcessedData.uniswapNewtoken.address);
+        console.log('Transactions: ' + transactions.number)
 
         //Check number of trades
         if (transactions.number > this.bot.maxTransaction) return;
@@ -56,10 +56,10 @@ class Bot {
             const currencyToken = contractProcessedData.uniswapCurrencyToken;
             const newToken      = contractProcessedData.uniswapNewtoken;
 
-            const pair = methods.contructPair(contractProcessedData.token0, currencyToken.address, currencyToken.decimals, 
-                                                                            newToken.address, newToken.decimals,
-                                                                            ChainId.BSCMAINNET, contractProcessedData.pairAddress,
-                                                                            contractProcessedData.liquidityDecimals, this.account);
+            const pair = await methods.contructPair(contractProcessedData.pairToken0, currencyToken.address, currencyToken.decimals, 
+                                                                                newToken.address, newToken.decimals,
+                                                                                ChainId.BSCMAINNET, contractProcessedData.pairAddress,
+                                                                                contractProcessedData.liquidityDecimals, this.account);
 
             //Create a trade window
             let tradeWindow = await tradeWindowService.create({
@@ -69,21 +69,26 @@ class Bot {
             })
 
             //Initialize trade
-            const newTokenroute = new Route([pair], currencyToken)
-            const newTokenTrade = new Trade(newTokenroute, new TokenAmount(currencyToken, ethers.utils.parseUnits(this.bot.initialAmount, 'ether'), TradeType.EXACT_INPUT))
+            let amountToTrade   = this.bot.initialAmount.toString();
+            let newTokenroute   = new Route([pair], currencyToken)
+            let newTokenTrade   = new Trade(newTokenroute, new TokenAmount(currencyToken, ethers.utils.parseUnits(amountToTrade, currencyToken.decimals)), TradeType.EXACT_INPUT)
+         
 
             //Define parameters for trading
             const slippageTolerance = new Percent(this.bot.slippage, '100') 
-            const amountOutMin      = newTokenTrade.minimumAmountOut(slippageTolerance).raw 
+            const amountOutMin      = newTokenTrade.minimumAmountOut(slippageTolerance).raw
             const path              = [currencyToken.address, newToken.address]
             const to                = this.bot.walletAddress 
             const deadline          = Math.floor(Date.now() / 1000) + 60 * 20
             const value             = newTokenTrade.inputAmount.raw
 
+            console.log('router: ' + this.router);
+
             //Define the router to perform the trade
             const swapRouter = new ethers.Contract(
                 this.router,
-                ['function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts);'],
+                ['function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)',
+                 'function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)'],
                 this.account
               );
 
@@ -91,7 +96,7 @@ class Bot {
             let receipt;
             
             console.log('before buying: ' + contractProcessedData.uniswapNewtoken.address)
-   
+                /*
             try {
                 const tx = swapRouter.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
                 receipt = await tx.wait();
@@ -116,7 +121,7 @@ class Bot {
                 transactions.number = transaction.number - 1;
                 return;
             }
-
+*/
             //Get account balance. hould work as it is previously used
             const router = new ethers.Contract(
                 newToken.address,
@@ -139,7 +144,7 @@ class Bot {
                 tokenGiven : currencyToken.address,
                 givenAmount : this.bot.initialAmount,
                 tokenReceived : newToken.address,
-                receivedAmount : currentTokens,
+                receivedAmount : parseFloat(currentTokens),
                 transactionStatusId : 1,
                 tradeWindowId : tradeWindow.id
             })
@@ -253,8 +258,6 @@ class Bot {
         //3. Coding
         let contractCode = contractProcessedData.sourceCode;
 
-        console.log(contractCode);
-
         //Iterate over all contract constraints to check in code
         for (let cons of this.contractCodeCons) {
 
@@ -268,7 +271,9 @@ class Bot {
         return true;
     }
 
-    sellTimer = async function (contractProcessedData, currentTokens, router, tradeWindow, transactions) {
+    sellTimer = async function (contractProcessedData, currentTokens, tradeWindow, transactions) {
+
+        console.log('ENTERED TIMER IN: ' + newToken.address);
 
         //Check execution price
         const currencyToken = contractProcessedData.uniswapCurrencyToken;
@@ -288,6 +293,8 @@ class Bot {
         //If the amount given is the desired amount
         if (currencyIfSwapped >= multiplier * initialAmount) {
 
+            console.log('ENTERED SALES IN : ' + newToken.address)
+
             //Approve the token
             let abi = ["function approve(address _spender, uint256 _value) public returns (bool success)"];
             let contract = new ethers.Contract(newToken.address, abi, this.account);
@@ -302,15 +309,16 @@ class Bot {
             //Set up parameters
             const slippageTolerance = new Percent(this.bot.slippage, '100')
             const amountOutMin      = trade.minimumAmountOut(slippageTolerance).raw 
-            const path              = [currencyToken.address, newToken.address]
+            const path              = [newToken.address, currencyToken.address]
             const to                = this.bot.walletAddress 
             const deadline          = Math.floor(Date.now() / 1000) + 60 * 20 
             const value             = trade.inputAmount.raw 
 
+            /*
             //Perform trade
             let receipt;
-            try {
-                const tx      = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
+            try { 
+                const tx = router.swapExactTokensForETH(ethers.utils.parseUnits(currentTokens, newToken.decimals), amountOutMin, path, to, deadline, {value: value});
                 receipt = await tx.wait();
             } catch (error) {
                 console.log(error);
@@ -327,7 +335,7 @@ class Bot {
                 })
                 return;
             }
-
+*/
             //Create log
             await logMessageService.create({
                     content : "Bought " + multiplier * initialAmount + " of " + currencyToken.address,
@@ -337,7 +345,7 @@ class Bot {
             //Create transaction
             await transactionService.create({
                 tokenGiven : newToken.address,
-                givenAmount : currentTokens,
+                givenAmount : parseFloat(currentTokens),
                 tokenReceived : currencyToken.address,
                 receivedAmount : multiplier * initialAmount,
                 transactionStatusId : 2,
@@ -362,6 +370,8 @@ class Bot {
     //Function that tries to trade the token for a profit
     selltimeout =  async function (currentTokens, newToken, tradeWindow, transactions) {
         
+        console.log('TIMED OUT: ' + newToken.address)
+
         //Create log
         await logMessageService.create({
             content : "Bought " + currentTokens + " of " + newToken.address,
