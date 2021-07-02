@@ -1,4 +1,3 @@
-const Queue = require('bull');
 const Bot = require('./bot');
 
 class BotManager {
@@ -8,14 +7,13 @@ class BotManager {
     newPairEventEmitter = null;
 
     //Constructs a new instance of the bot manager with the pair emitter
-    constructor(newPairEventEmitter, redisConnection, router, provider) {
+    constructor(newPairEventEmitter, router, provider) {
         this.router = router;
         this.provider = provider;
         this.newPairEventEmitter = newPairEventEmitter;
-        this.redisConnection = redisConnection;
     }
 
-    //Creates a new bot class, new queue and saves the relation
+    //Creates a new bot class
     async start(botData) {
 
         //If there are no bots
@@ -23,17 +21,9 @@ class BotManager {
             await this.newPairEventEmitter.start();
         }
 
-        //Create a new queue
-        let queue = new Queue('userQueue' + botData.bot.id, this.redisConnection);
-
         //Initializes a new bot
-        let bot = new Bot(this.provider, this.router, botData, queue);
+        let bot = new Bot(this.provider, this.router, botData);
 
-        //Set up queue processor;
-        queue.process('sellSwap', job => {
-            bot.processSellOrder(job);
-        });
-        
         //Set up current number of transactions open
         let transactions = { number : 0 }
 
@@ -45,7 +35,7 @@ class BotManager {
         }
 
         //Saves relationship
-        this.activeBots.push({id: botData.bot.id, data: {bot : bot, queue: queue, transactions : transactions, listener: botNewTokenListener}});
+        this.activeBots.push({id: botData.bot.id, data: {bot : bot, transactions : transactions, listener: botNewTokenListener}});
 
 
         //Listen to pair created event
@@ -58,14 +48,11 @@ class BotManager {
 
 
         let activeBot= this.activeBots.find(activeBot => activeBot.id == botData.bot.id);
-        let queue = activeBot.data.queue;
         let listener = activeBot.data.listener
 
         //Remove event
         this.newPairEventEmitter.newTokenEvent.removeListener('newToken', listener);
-        
-        queue.obliterate();
-     
+             
         //Delete bot in array
         this.activeBots = this.activeBots.filter((activeBot)=> {activeBot.id != botData.bot.id});
 

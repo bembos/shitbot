@@ -15,7 +15,7 @@ class PancakeSwapIntegration {
         return this.buyOrderBotManager;
     }
 
-    initialize(redisConnection) {
+    initialize() {
 
         let currencyTokenAddress = process.env.WBNB_ADDRESS;
         let stableTokenAddress = process.env.BUSD_ADDRESS;
@@ -28,7 +28,7 @@ class PancakeSwapIntegration {
         
         this.newPairListener = new NewPairListener(currencyTokenAddress, stableTokenAddress, factoryAddress, provider, burnAddress, walletToPowerTrades, router)
 
-        this.passiveBotManager = new PassiveBotManager(this.newPairListener, redisConnection, router, provider);
+        this.passiveBotManager = new PassiveBotManager(this.newPairListener, router, provider);
         this.buyOrderBotManager = new BuyOrderBotManager(currencyTokenAddress, currencyDecimals, router, provider);
     }
 }
