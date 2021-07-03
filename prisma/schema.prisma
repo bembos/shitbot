@@ -102,7 +102,7 @@ model LogMessage {
   content       String
   createdAt     DateTime    @default(now()) @map(name: "created_at")
   tradeWindow   TradeWindow @relation(fields: [tradeWindowId], references: [id]) 
-  tradeWindowId Int         @unique @map(name: "trade_window_id")
+  tradeWindowId Int         @map(name: "trade_window_id")
 
   @@map(name: "log_messages")
 }
