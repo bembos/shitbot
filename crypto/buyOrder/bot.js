@@ -94,7 +94,7 @@ class Bot{
 
         try {
              //Perform trade
-            const tx = router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
+            const tx = await router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
             receipt = await tx.wait();
         } catch (error) {
             console.log(error);

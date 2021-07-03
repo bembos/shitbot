@@ -49,8 +49,8 @@ class NewPairListener {
 
     async processData(newTokenAddress, pairAddress, tokenHolders, liquidityHolders) {
 
-        //Accurate checks?
-        //await sleepHelper.sleep(5000);
+        //Accurate checks wait 1 sec before analizing
+        await sleepHelper.sleep(1000);
 
         let sourceCode = "";
         let marketCap = 0;
@@ -77,8 +77,8 @@ class NewPairListener {
         let liquidityContract = new ethers.Contract(
             pairAddress,
             ['function token0() external view returns (address)',
-             'function totalSupply() public view override returns (uint256)',
-             'function balanceOf(address account) public view override returns (uint256)',
+             'function totalSupply() public view returns (uint256)',
+             'function balanceOf(address account) public view returns (uint256)',
              'function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)',
              'function decimals() external pure returns (uint8)'],
             this.account
@@ -87,8 +87,8 @@ class NewPairListener {
         let tokenContract = new ethers.Contract(
             newTokenAddress,
             ['function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)',
-             'function totalSupply() public view override returns (uint256) ', 
-             'function balanceOf(address account) public view override returns (uint256)',
+             'function totalSupply() public view returns (uint256) ', 
+             'function balanceOf(address account) public view returns (uint256)',
              'function owner() public view returns (address)',
              'function decimals() external pure returns (uint8)'],
             this.account
@@ -142,7 +142,6 @@ class NewPairListener {
 
             //Check order just in case
             if (token0 != this.currencyTokenAddress) {
-                console.log("Listener entered if");
                 let temp = parsedReserves[0]
                 parsedReserves[0] = parsedReserves[1];
                 parsedReserves[1] = temp; 
@@ -197,7 +196,7 @@ class NewPairListener {
 
         //Retrieve execution price of both tokens and calculate liquidity pool 
         let currencyReserveTotal = currencyReserve * currencyInStablePrice;
-        let newTokenReserveTotal = newTokenReserve * newTokenInCurrencyPrice * currencyInStablePrice; 
+        let newTokenReserveTotal = /*newTokenReserve * newTokenInCurrencyPrice * currencyInStablePrice*/ 0; 
         liquidity = newTokenReserveTotal + currencyReserveTotal;
        
         totalLiquidityTokens         = totalLiquidityTokens - liquidityBurned;
