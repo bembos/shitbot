@@ -1,32 +1,15 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-/**
- * Retrieves the user's buy orders
- * @param {User} user 
- * @returns 
- */
-exports.retrieveUserWithBuyOrders = (user) => {
-    return prisma.user.findUnique({
-        where : {
-            id: user.id
-        },
-        include: {
-            buyOrders: {
-                include : {
-                    buyOrderStatus: true
-                }
-            }
-        }
-    })
-}
+//Pancake swap manager
+const PancakeSwapManager = require('../crypto/pancakeSwapManager/pancakeSwapManager')
 
 /**
  * Creates a db entry
  * @param {Data} req 
  * @returns 
  */
-exports.create = async (req) => {
+exports.start = async (req) => {
 
     //Creates database row
     buyOrder = await prisma.buyOrder.create({
@@ -48,16 +31,12 @@ exports.create = async (req) => {
     //Retrieve data required 
     buyOrder = await prisma.buyOrder.findUnique({
         where : {
-            id: buyOrder
+            id: buyOrder.id
         },
-        include: {
-            buyOrders: {
+        include : {
+            user: {
                 include : {
-                    user: {
-                        include : {
-                            bot : true
-                        }
-                    }
+                    bot : true
                 }
             }
         }
@@ -73,48 +52,19 @@ exports.create = async (req) => {
     return buyOrder;
 }
 
-/**
- * Find the db entry with the correct id
- * @param {Id} buyOrderId 
- * @returns 
- */
-exports.find = (buyOrderId) => {
-    return prisma.buyOrder.findUnique({
-        where: {
-            id : parseInt(buyOrderId)
-        }
-    })
-}
-
-/**
- * Updates a db entry
- * @param {Id} buyOrderId 
- * @returns 
- */
-exports.update = (fields) => {
-    return prisma.buyOrder.update({
-        where: {
-            id: parseInt(fields.buyOrder),
-        },
-        data: {
-            label: fields.label,
-            address: fields.address,
-            pairAddress: fields.pairAddress,
-            slippage: parseInt(fields.slippage),
-            amountGiven:parseFloat(fields.amountGiven),
-            buyOrderStatusId: statusId
-        },
-    })
-}
 
 /**
  * Deletes a db entry given the id
  * @param {Id} buyOrderId 
  * @returns 
  */
-exports.delete = async (buyOrderId) => {
+exports.stop = async (buyOrderId) => {
 
-    let buyOrder = await this.find(buyOrderId)
+    let buyOrder = await prisma.buyOrder.findUnique({
+                        where: {
+                                id : parseInt(buyOrderId)
+                            }
+                        })
 
     //If the status given is 1
     if (buyOrder.buyOrderStatusId == 1) {

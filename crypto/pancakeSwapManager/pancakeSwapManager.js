@@ -36,9 +36,9 @@ class PancakeSwapIntegration {
 //Singleton class to acess Pancake swap manager
 class PancakeSwapManager {
 
-    static initialize(redisConnection) {
+    static initialize() {
         PancakeSwapManager.instance = new PancakeSwapIntegration();
-        PancakeSwapManager.instance.initialize(redisConnection);
+        PancakeSwapManager.instance.initialize();
     }
 
     static getPassiveBotManager() {

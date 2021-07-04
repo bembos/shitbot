@@ -50,7 +50,7 @@ class NewPairListener {
     async processData(newTokenAddress, pairAddress, tokenHolders, liquidityHolders) {
 
         //Accurate checks wait 1 sec before analizing
-        await sleepHelper.sleep(1000);
+        //await sleepHelper.sleep(1000);
 
         let sourceCode = "";
         let marketCap = 0;
@@ -183,7 +183,7 @@ class NewPairListener {
 
             const trade = new Trade(route, new TokenAmount(uniswapToken, ethers.utils.parseUnits('1', tokenDecimals)), TradeType.EXACT_INPUT)
             
-            newTokenInCurrencyPrice = trade.executionPrice.toFixed(15);
+            newTokenInCurrencyPrice = trade.executionPrice.toFixed(20);
         } catch (error) {
             return null;
         }
@@ -325,34 +325,9 @@ class NewPairListener {
                 return;
             }
 
-            //If the transfer was from this address
-            if (from == tokenOut) {
-
-                //Initialize helper var
-                let found = false;
-                let contract = false;
-
-                //If it sent to a contract
-                if (this.provider.getCode(to) == "0x") contract = true;
-
-                //Iterate over all holders
-                liquidityHolders.holders.forEach( (holder) => {
-                    if (holder.address == to){
-                        found = true;
-                        holder.amount = holder.amount + value;
-                    }
-                });
-
-                //If the address isn't in the holders array
-                if (!found) {
-                    liquidityHolders.holders.push({ address : to, value : value, contract: contract});
-                }
-
-                return;
-            }
-
-            //If the transfer was to this address
-            if (to == tokenOut) {
+                        
+            //If the transfer was to this address, then just reduce the tokens that someone has
+            if (to == pairAddress) {
                 
                 //Iterate over all holders
                 liquidityHolders.holders.forEach( (holder, index) => {
@@ -366,9 +341,34 @@ class NewPairListener {
                         }
                     }
                 });
-
-                return;
             }
+            //If it is from any other address just add it and remove it from other people
+            else {
+                let found = false;
+                let contract = false;
+
+                //If it sent to a contract
+                if (this.provider.getCode(to) == "0x") contract = true;
+
+                //Iterate over all holders
+                liquidityHolders.holders.forEach( (holder) => {
+                    if (holder.address == to){
+                        found = true;
+                        holder.amount = holder.amount + value;
+                    }
+
+                    if (holder.address == from) {
+                        holder.amount = holder.amount + value;            
+                    }
+                });
+
+                //If the address isn't in the holders array
+                if (!found) {
+                    liquidityHolders.holders.push({ address : to, value : value, contract: contract});
+                }
+            }
+
+            //If is a exchange between address just save it
         });
 
         //Sort both arrays

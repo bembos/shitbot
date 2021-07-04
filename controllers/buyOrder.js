@@ -1,5 +1,6 @@
 //Code constraint Service handler
 const buyOrderService = require('../services/buyOrder');
+const botBuyOrderService = require('../services/botBuyOrder');
 
 //Format date utility
 const moment = require('moment');
@@ -24,8 +25,8 @@ exports.showCreate = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
     
-    //Create new instance
-    await buyOrderService.create(req);
+    //
+    await botBuyOrderService.start(req);
     
     res.redirect('/buy-orders');
 };
@@ -48,7 +49,7 @@ exports.edit = async (req, res, next) => {
 exports.delete = async (req, res, next) => {
     
     //Create new instance
-    await buyOrderService.delete(req.body.buyOrder);
+    await botBuyOrderService.stop(req.body.buyOrder);
     
     res.redirect('/buy-orders');
 };

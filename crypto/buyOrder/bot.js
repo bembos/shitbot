@@ -26,62 +26,16 @@ class Bot{
     onMint = async function (sender, amount0, amount1){
 
         let tokenOutAddress = this.buyOrder.address;
-        let pairAddress = this.buyOrder.pairAddress;
-        let token0;
-        let newtokenDecimals;
-        let liquidityDecimals;
 
-        //Make required contract calls (token 0, decimals)
-        let liquidityContract = new ethers.Contract(
-            pairAddress,
-            ['function token0() external view returns (address)',
-             'function decimals() external pure returns (uint8)'],
-            this.account
-          );
-
-        let tokenContract = new ethers.Contract(
-            newTokenAddress,
-            ['function decimals() external pure returns (uint8)'],
-            this.account
-        );
-
-        try {
-            //Get decimals
-            liquidityDecimals = await liquidityContract.decimals();
-            newtokenDecimals = await tokenContract.decimals();
-
-            //Token 0
-            token0 = await liquidityContract.token0();
-
-        } catch (error) {
-            console.log(error);
-
-            //Set up status as failed
-            await buyOrderService.update({
-                buyOrder : this.buyOrder.id,
-                label : this.buyOrder.label,
-                address: this.buyOrder.address,
-                slippage: this.buyOrder.slippage,
-                amountGiven: this.buyOrder.amountGiven,
-                statusId: 2
-            });
-        }
-
-        const pair = await methods.contructPair(token0, this.currencyToken, this.currencyDecimals, 
-                                                        tokenOutAddress, newTokenDecimals,
-                                                        ChainId.BSCMAINNET, pairAddress,
-                                                        liquidityDecimals, this.account);
-
-        const sellRoute = new Route([pair], this.currencyToken)
-        const trade = new Trade(sellRoute, new TokenAmount(this.currencyToken, ethers.utils.parseUnits(this.buyOrder.amountGiven, this.currencyDecimals), TradeType.EXACT_INPUT))
-
-        //Set up parameters
-        const slippageTolerance = new Percent(this.buyOrder.slippage, '100') 
-        const amountOutMin = trade.minimumAmountOut(slippageTolerance).raw
+        //Define parameters for trading
         const path = [this.currencyToken, tokenOutAddress]
-        const to = this.bot.walletAddress
-        const deadline = Math.floor(Date.now() / 1000) + 60 * 20 
-        const value = trade.inputAmount.raw 
+        const to   = this.bot.walletAddress 
+
+        let amountIn     = ethers.utils.parseUnits(this.buyOrder.amountGiven.toString(), this.currencyDecimals);
+        let amounts      = await swapRouter.getAmountsOut(amountIn, path);
+        let amountOutMin = amounts[1].sub(amounts[1].mul(this.buyOrder.slippage).div(100));
+        let tx;
+        let receipt;
 
         //Set up router
         const router = new ethers.Contract(
@@ -89,13 +43,31 @@ class Bot{
             ['function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)'],
             this.account
           );
+
+        //Define router to approve amount  to send
+        const currencyRouter = new ethers.Contract(
+            currencyToken.address,
+            [
+              'function approve(address spender, uint amount) public returns(bool)',
+            ],
+            this.account
+          );
+
+        //Approve the amount in
+        try {
+            tx = await currencyRouter.approve(this.router, amountIn, { gasLimit: '250000', gasPrice: ethers.utils.parseUnits('8', 'gwei')  });
+            receipt = await tx.wait()
+        } catch (error) {
+            console.log(error);
+            return;
+        }
         
-        let receipt = { status : 0 };
+        receipt = { status : 0 };
 
         try {
              //Perform trade
-            const tx = await router.swapExactETHForTokens(amountOutMin, path, to, deadline, {value: value});
-            receipt = await tx.wait();
+             tx = await swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, {value: amountIn, gasLimit: '250000', gasPrice: ethers.utils.parseUnits('10', 'gwei') })
+             receipt = await tx.wait();
         } catch (error) {
             console.log(error);
             console.log(receipt);
@@ -125,7 +97,7 @@ class Bot{
         this.mintContract = new ethers.Contract(
                                 buyOrder.address,
                                 ['event Mint(address indexed sender, uint amount0, uint amount1);'],
-                                account
+                                this.account
                             );
 
         //Set up the the funnctions

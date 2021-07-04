@@ -21,18 +21,17 @@ class BotManager {
 
         bot.start();
 
-        this.activeBots[botData.buyOrder.id] = bot;
+        this.activeBots.push({id: botData.buyOrder.id, bot: bot});
     }
 
     //Retrieves botlistener instance from active bots array and detaches the event
     stop(botData) {
 
-        let bot  = this.activeBots[botData.buyOrder.id];
+        let bot= this.activeBots.find(activeBot => activeBot.id == botData.buyOrder.id).bot;
 
         bot.stop();
 
-        delete this.activeBots[botData.buyOrder.id];
-
+        this.activeBots = this.activeBots.filter((activeBot)=> {activeBot.id != botData.buyOrder.id});
     }
 }
 

@@ -1,6 +1,6 @@
 //Ethers.js
 const { ethers } = require('ethers'); 
-const { Route, Trade, TradeType, TokenAmount, Percent } = require('@uniswap/sdk');
+const { Route, Pair, Trade, TradeType, TokenAmount, Percent } = require('@uniswap/sdk');
 
 //Services
 const tradeWindowService = require('../../services/tradeWindow');
@@ -54,23 +54,12 @@ class Bot {
             const currencyToken = contractProcessedData.uniswapCurrencyToken;
             const newToken      = contractProcessedData.uniswapNewtoken;
 
-            const pair = await methods.contructPair(contractProcessedData.pairToken0, currencyToken.address, currencyToken.decimals, 
-                                                                                      newToken.address, newToken.decimals,
-                                                                                      ChainId.BSCMAINNET, contractProcessedData.pairAddress,
-                                                                                      contractProcessedData.liquidityDecimals, this.account);
-
             //Create a trade window
             let tradeWindow = await tradeWindowService.create({
                 tokenAddress : newToken.address,
                 tokenName : newToken.address,
                 botId : this.bot.id
             })
-
-            //Initialize trade
-            let amountToTrade   = this.bot.initialAmount.toString();
-            let newTokenroute   = new Route([pair], currencyToken)
-            let newTokenTrade   = new Trade(newTokenroute, new TokenAmount(currencyToken, ethers.utils.parseUnits(amountToTrade, currencyToken.decimals)), TradeType.EXACT_INPUT)
-            console.log("tokents to get: " + newTokenTrade.executionPrice.toSignificant(6));
 
             //Define the router to perform the trade
             const swapRouter = new ethers.Contract(
@@ -81,19 +70,46 @@ class Bot {
                 this.account
               );
 
+            const liquidityRouter = new ethers.Contract(
+                contractProcessedData.pairAddress,
+                ['function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)'],
+                this.account
+            );
+
+            //Define router to approve amount  to send
+            const currencyRouter = new ethers.Contract(
+                currencyToken.address,
+                [
+                  'function approve(address spender, uint amount) public returns(bool)',
+                ],
+                this.account
+              );
+
             //Define parameters for trading
             const path = [currencyToken.address, newToken.address]
             const to   = this.bot.walletAddress 
 
-            let amountIn = ethers.utils.parseUnits(this.bot.initialAmount.toString(), currencyToken.decimals);
-            let amounts = await swapRouter.getAmountsOut(amountIn, path);
+            let amountIn     = ethers.utils.parseUnits(this.bot.initialAmount.toString(), currencyToken.decimals);
+            let amounts      = await swapRouter.getAmountsOut(amountIn, path);
             let amountOutMin = amounts[1].sub(amounts[1].mul(this.bot.slippage).div(100));
-            
-            //Perform the trade
+            let tx;
             let receipt;
             
+            //Before trading approve amount to trade using pancake router
             try {
-                let tx = await swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, { value: amountIn })
+                tx = await currencyRouter.approve(this.router, amountIn, { gasLimit: '250000', gasPrice: ethers.utils.parseUnits('8', 'gwei')  });
+                receipt = await tx.wait()
+            } catch (error) {
+                console.log(error);
+                transactions.number = transactions.number - 1;
+                return;
+            }
+
+            console.log("approved");
+
+            //Perform the trade
+            try {
+                tx = await swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, {value: amountIn, gasLimit: '250000', gasPrice: ethers.utils.parseUnits('8', 'gwei') })
                 receipt = await tx.wait();
             } catch (error) {
                 console.log(error);
@@ -122,19 +138,22 @@ class Bot {
             console.log('-------------------------------------------------------')
 
             //Get account balance. hould work as it is previously used
-            const router = new ethers.Contract(
+            const newTokenRouter = new ethers.Contract(
                 newToken.address,
-                ['function balanceOf(address account) public view override returns (uint256)'],
+                ['function balanceOf(address account) public view returns (uint256)',
+                 'function approve(address _spender, uint256 _value) public returns (bool success)'],
                 this.account
             )
 
             //Retrieve current tokens and format
-            let currentTokens = await router.balanceOf(this.bot.walletAddress);
-            currentTokens     = ethers.utils.formatUnits(currentTokens, currencyToken.decimals);
+            let currentTokens = await newTokenRouter.balanceOf(this.bot.walletAddress);
+
+            console.log("current tokens before format: " + currentTokens);
+            console.log("current tokens after format: " + ethers.utils.formatUnits(currentTokens, newToken.decimals));
 
             //Create log
             await logMessageService.create({
-                content : "Bought " + currentTokens + " of " + newToken.address,
+                content : "Bought " + ethers.utils.formatUnits(currentTokens, newToken.decimals) + " of " + newToken.address,
                 tradeWindowId : tradeWindow.id,
             })
 
@@ -148,7 +167,7 @@ class Bot {
                 tradeWindowId : tradeWindow.id
             })
 
-            this.asyncSellSwap(contractProcessedData, currentTokens, swapRouter, tradeWindow, transactions, this.bot.maxTime, this.bot.autoMultiplier, this.bot.initialAmount);
+            this.asyncSellSwap(contractProcessedData, currentTokens, swapRouter, newTokenRouter, liquidityRouter, tradeWindow, transactions, this.bot.maxTime, this.bot.autoMultiplier, this.bot.initialAmount);
         }
     }
 
@@ -192,7 +211,7 @@ class Bot {
                 let maxLiquidityHolder;
 
                 liquidityTracking.holders.forEach(holder => {
-                    if (!holder.contract && !maxHolder) {
+                    if (!holder.contract && !maxLiquidityHolder) {
                         maxLiquidityHolder = holder;
                     }
                 });
@@ -270,7 +289,7 @@ class Bot {
     }
 
     //Async function which will try to sell every couple of seconds
-    async asyncSellSwap(contractProcessedData, currentTokens, swapRouter, tradeWindow, transactions, maxTime, multiplier, initialAmount) {        
+    async asyncSellSwap(contractProcessedData, currentTokens, swapRouter, newTokenRouter, liquidityRouter, tradeWindow, transactions, maxTime, multiplier, initialAmount) {        
         
         console.log('Entered Sales for ' + contractProcessedData.uniswapNewtoken.address)
         //Initialize variable
@@ -291,44 +310,32 @@ class Bot {
             const currencyToken = contractProcessedData.uniswapCurrencyToken;
             const newToken      = contractProcessedData.uniswapNewtoken;
 
-            const pair = await methods.contructPair(contractProcessedData.token0, currencyToken.address, currencyToken.decimals, 
-                                                                            newToken.address, newToken.decimals,
-                                                                            ChainId.BSCMAINNET, contractProcessedData.pairAddress,
-                                                                            contractProcessedData.liquidityDecimals, this.account);
+            let amounts      = await swapRouter.getAmountsOut(currentTokens, [newToken.address, currencyToken.address]);
+            let amountOutMin = ethers.utils.formatUnits(amounts[1].sub(amounts[1].mul(this.bot.slippage).div(100)), currencyToken.decimals);
 
-            const route = new Route([pair], newToken)
-            const trade = new Trade(route, new TokenAmount(newToken, ethers.utils.parseUnits(currentTokens, newToken.decimals)), TradeType.EXACT_INPUT)                                  
-
-            const currencyIfSwapped = trade.executionPrice.toSignificant(6);
-            console.log("currency if swapped: " + currencyIfSwapped)
+            console.log("currency if swapped: " + amountOutMin)
+            console.log("expected price: " +  multiplier * initialAmount)
 
             //If the amount given is the desired amount
-            if (currencyIfSwapped >= multiplier * initialAmount) {
+            if (amountOutMin >= multiplier * initialAmount) {
 
                 console.log('ENTERED SALES IN : ' + newToken.address)
-                
+                /*
                 //Approve the token
-                let abi = ["function approve(address _spender, uint256 _value) public returns (bool success)"];
-                let contract = new ethers.Contract(newToken.address, abi, this.account);
-
                 try {
-                    await contract.approve(this.router, ethers.utils.parseUnits(currentTokens, newToken.decimals));
+                    await newTokenRouter.approve(this.router, currentTokens);
                 } catch (error) {
-
-                    //If for some reason the token couldn't be approved
                     console.log(error);
-
-                    transactions.number = transactions.number - 1
+                    currentTime = maxTime;
+                    status = 3;
 
                     await logMessageService.create({
                         content : "Couldn't approve " + newToken.address,
                         tradeWindowId : tradeWindow.id,
                     })
+                }*/
 
-                    return;
-                }
-
-                console.log('Approved token')
+                console.log('Approved sell')
                 
                 //Create log
                 await logMessageService.create({
@@ -337,31 +344,25 @@ class Bot {
                 })
 
                 //Initialize sell parameters
-                let amountIn = ethers.utils.parseUnits(currentTokens.toString(), newToken.decimals);
-                let amounts = await swapRouter.getAmountsOut(amountIn, [newToken.address, currencyToken.address]);
+                let amountIn     = currentTokens;
+                let amounts      = await swapRouter.getAmountsOut(amountIn, [newToken.address, currencyToken.address]);
                 let amountOutMin = amounts[1].sub(amounts[1].mul(this.bot.slippage).div(100));
 
                 //Perform swap
                 let receipt;
                 try { 
-                    let tx = await routerV2.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10)
+                    let tx = await routerV2.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, { gasLimit: '250000', gasPrice: ethers.utils.parseUnits('6', 'gwei')  })
                     receipt = await tx.wait();
                 } catch (error) {
+                    console.log("COULDN't SELL:" + newToken.address)
                     console.log(error);
-                    transactions.number = transactions.number - 1;
-                    return;
-                }
-                
-                if (receipt.status == 0) {     
-                    //Create log
-                    transactions.number = transactions.number - 1;
+                    currentTime = maxTime;
+                    status = 3;
 
                     await logMessageService.create({
-                        content : "Failed to swap back " + newTokenAddress + " to currency token (bsc = bnb)",
+                        content : "Failed to sell" + newTokenAddress,
                         tradeWindowId : tradeWindowId,
                     })
-
-                    return;
                 }
 
                 console.log('-------------------------------------------------------')
@@ -394,13 +395,37 @@ class Bot {
         }
 
         //If transaction failed create failed status entities
+        /*
         if (status == 3) {
 
-            console.log('COULDNT BUY')
+            //Try one last time to sell
+            let amountIn = currentTokens;
+            let amounts = await swapRouter.getAmountsOut(amountIn, [newToken.address, currencyToken.address]);
+            let amountOutMin = amounts[1].sub(amounts[1].mul(this.bot.slippage).div(100));
+
+            //Perform swap
+            let receipt;
+            try { 
+                let tx = await swapRouter.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, { gasLimit: '250000', gasPrice: ethers.utils.parseUnits('10', 'gwei')  })
+                receipt = await tx.wait();
+            } catch (error) {
+                console.log("COULDN't SELL in last effort:" + newToken.address)
+                console.log(error);
+                transactions.number = transactions.number - 1;
+
+                await logMessageService.create({
+                    content : "Failed to sell at timeout" + newTokenAddress,
+                    tradeWindowId : tradeWindowId,
+                })
+
+                return;
+            }
+
+            console.log('SOLD AT LESS')
 
             //Create log
             await logMessageService.create({
-                content : "Timed out " + contractProcessedData.uniswapNewtoken.address,
+                content : "Timed out/Sold at deadline " + contractProcessedData.uniswapNewtoken.address,
                 tradeWindowId : tradeWindow.id,
             })
 
@@ -415,7 +440,7 @@ class Bot {
             })
 
             transactions.number = transactions.number - 1;
-        }
+        }*/
 
         console.log('Finished ' + contractProcessedData.uniswapNewtoken.address)
     }
