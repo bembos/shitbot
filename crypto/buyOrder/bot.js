@@ -27,6 +27,15 @@ class Bot{
 
         let tokenOutAddress = this.buyOrder.address;
 
+        //Define router
+        //Set up router
+        const swapRouter = new ethers.Contract(
+            this.router,
+            ['function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)',
+             'function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)'],
+            this.account
+          );
+
         //Define parameters for trading
         const path = [this.currencyToken, tokenOutAddress]
         const to   = this.bot.walletAddress 
@@ -37,31 +46,6 @@ class Bot{
         let tx;
         let receipt;
 
-        //Set up router
-        const router = new ethers.Contract(
-            this.router,
-            ['function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)'],
-            this.account
-          );
-
-        //Define router to approve amount  to send
-        const currencyRouter = new ethers.Contract(
-            currencyToken.address,
-            [
-              'function approve(address spender, uint amount) public returns(bool)',
-            ],
-            this.account
-          );
-
-        //Approve the amount in
-        try {
-            tx = await currencyRouter.approve(this.router, amountIn, { gasLimit: '250000', gasPrice: ethers.utils.parseUnits('8', 'gwei')  });
-            receipt = await tx.wait()
-        } catch (error) {
-            console.log(error);
-            return;
-        }
-        
         receipt = { status : 0 };
 
         try {
@@ -95,7 +79,7 @@ class Bot{
     //Starts listening to mint event
     start(){
         this.mintContract = new ethers.Contract(
-                                buyOrder.address,
+                                buyOrder.pairAddress,
                                 ['event Mint(address indexed sender, uint amount0, uint amount1);'],
                                 this.account
                             );

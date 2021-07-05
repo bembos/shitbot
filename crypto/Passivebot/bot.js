@@ -94,18 +94,6 @@ class Bot {
             let amountOutMin = amounts[1].sub(amounts[1].mul(this.bot.slippage).div(100));
             let tx;
             let receipt;
-            
-            //Before trading approve amount to trade using pancake router
-            try {
-                tx = await currencyRouter.approve(this.router, amountIn, { gasLimit: '250000', gasPrice: ethers.utils.parseUnits('8', 'gwei')  });
-                receipt = await tx.wait()
-            } catch (error) {
-                console.log(error);
-                transactions.number = transactions.number - 1;
-                return;
-            }
-
-            console.log("approved");
 
             //Perform the trade
             try {
@@ -148,8 +136,19 @@ class Bot {
             //Retrieve current tokens and format
             let currentTokens = await newTokenRouter.balanceOf(this.bot.walletAddress);
 
-            console.log("current tokens before format: " + currentTokens);
-            console.log("current tokens after format: " + ethers.utils.formatUnits(currentTokens, newToken.decimals));
+            //Approve selling the token
+            try {
+                await newTokenRouter.approve(this.router, currentTokens);
+            } catch (error) {
+                console.log(error);
+
+                await logMessageService.create({
+                    content : "Couldn't approve " + newToken.address,
+                    tradeWindowId : tradeWindow.id,
+                })
+            }
+
+            console.log('Approved sell')
 
             //Create log
             await logMessageService.create({
@@ -311,7 +310,8 @@ class Bot {
             const newToken      = contractProcessedData.uniswapNewtoken;
 
             let amounts      = await swapRouter.getAmountsOut(currentTokens, [newToken.address, currencyToken.address]);
-            let amountOutMin = ethers.utils.formatUnits(amounts[1].sub(amounts[1].mul(this.bot.slippage).div(100)), currencyToken.decimals);
+            //13 slippage for trading back
+            let amountOutMin = ethers.utils.formatUnits(amounts[1].sub(amounts[1].mul(13).div(100)), currencyToken.decimals);
 
             console.log("currency if swapped: " + amountOutMin)
             console.log("expected price: " +  multiplier * initialAmount)
@@ -320,22 +320,6 @@ class Bot {
             if (amountOutMin >= multiplier * initialAmount) {
 
                 console.log('ENTERED SALES IN : ' + newToken.address)
-                /*
-                //Approve the token
-                try {
-                    await newTokenRouter.approve(this.router, currentTokens);
-                } catch (error) {
-                    console.log(error);
-                    currentTime = maxTime;
-                    status = 3;
-
-                    await logMessageService.create({
-                        content : "Couldn't approve " + newToken.address,
-                        tradeWindowId : tradeWindow.id,
-                    })
-                }*/
-
-                console.log('Approved sell')
                 
                 //Create log
                 await logMessageService.create({
@@ -395,7 +379,7 @@ class Bot {
         }
 
         //If transaction failed create failed status entities
-        /*
+        
         if (status == 3) {
 
             //Try one last time to sell
@@ -440,7 +424,7 @@ class Bot {
             })
 
             transactions.number = transactions.number - 1;
-        }*/
+        }
 
         console.log('Finished ' + contractProcessedData.uniswapNewtoken.address)
     }
