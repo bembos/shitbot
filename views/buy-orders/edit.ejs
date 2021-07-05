@@ -16,7 +16,7 @@
                     <div class="card-block">
                         <div class="card-body">
                           <div class="card-body">
-                            <form action="/buy-orders/edit" method="POST" enctype="application/x-www-form-urlencoded">
+                            <form action="/buy-orders/edit" method="POST" enctype="application/x-www-form-urlencoded" autocomplete="off">
                               <input type="hidden" name="_method" value="PUT">
                               <input type="hidden" name="buyOrder" value="<%= buyOrder.id %>">
                               <input type="hidden" name="statusId" value="<%= buyOrder.buyOrderStatusId %>">
@@ -44,6 +44,16 @@
                               <h5 class="mt-2">Amount Given (BNB)r</h5>
                               <fieldset class="form-group">
                                 <input type="number" step="0.001" class="form-control" name="amountGiven" value="<%= buyOrder.amountGiven %>">
+                              </fieldset>
+
+                              <h5 class="mt-2">Multiplier Expected (If 0, it won't sell)</h5>
+                              <fieldset class="form-group">
+                                <input type="number" step="0.1" class="form-control" id="placeholderInput" name="autoMultiplier" value="<%= buyOrder.autoMultiplier %>">
+                              </fieldset>
+
+                              <h5 class="mt-2">Max Time per Trade (seconds) before forced sale</h5>
+                              <fieldset class="form-group">
+                                <input type="number" class="form-control" id="placeholderInput" name="maxTime" value="<%= buyOrder.maxTime %>">
                               </fieldset>
       
                               <button type="submit" class="btn mr-1 mb-1 btn-success btn-lg">Save</button>

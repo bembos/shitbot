@@ -44,6 +44,7 @@ model BuyOrder {
   slippage          Int
   amountGiven       Float           @map(name: "amount_given")
   autoMultiplier    Float?          @map(name: "auto_multiplier")
+  maxTime           Int             @map(name: "max_time")
   createdAt         DateTime        @default(now()) @map(name: "created_at")
   completedAt       DateTime?       @map(name: "completed_at")
   user              User            @relation(fields: [userId], references: [id])

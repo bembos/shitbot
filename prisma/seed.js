@@ -28,6 +28,9 @@ async function main() {
                 label: 'Waiting to Buy'
             },
             {
+                label: 'Waiting to Sell'
+            },
+            {
                 label: 'Failed'  
             },
             {

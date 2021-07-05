@@ -19,6 +19,13 @@ class BotManager {
 
         let bot = new Bot(botData, this.router, this.provider, this.currencyTokenAddress, this.currencyDecimals);
 
+        let botNewTokenListener = () => {
+            this.stop({buyOrder: bot.buyOrder});
+            bot.events.removeAllListeners('finished');
+        }
+
+        bot.events.on('finished', botNewTokenListener);
+
         bot.start();
 
         this.activeBots.push({id: botData.buyOrder.id, bot: bot});
@@ -27,11 +34,16 @@ class BotManager {
     //Retrieves botlistener instance from active bots array and detaches the event
     stop(botData) {
 
-        let bot= this.activeBots.find(activeBot => activeBot.id == botData.buyOrder.id).bot;
+        let activeBot = this.activeBots.find(activeBot => activeBot.id == botData.buyOrder.id);
 
-        bot.stop();
+        if (activeBot) {
 
-        this.activeBots = this.activeBots.filter((activeBot)=> {activeBot.id != botData.buyOrder.id});
+            let bot = activeBot.bot;
+
+            bot.stop();
+
+            this.activeBots = this.activeBots.filter((activeBot)=> {activeBot.id != botData.buyOrder.id});
+        }
     }
 }
 

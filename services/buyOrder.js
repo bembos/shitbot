@@ -22,58 +22,6 @@ exports.retrieveUserWithBuyOrders = (user) => {
 }
 
 /**
- * Creates a db entry
- * @param {Data} req 
- * @returns 
- */
-exports.create = async (req) => {
-
-    //Creates database row
-    buyOrder = await prisma.buyOrder.create({
-        data: {
-            label: req.body.label,
-            address: req.body.address,
-            pairAddress: req.body.pairAddress,
-            slippage: parseInt(req.body.slippage),
-            amountGiven:parseFloat(req.body.amountGiven),
-            userId: parseInt(req.body.userId),
-            blockchainId: parseInt(req.body.blockchainId),
-            buyOrderStatusId: parseInt(req.body.buyOrderStatusId)
-        }
-    })
-
-    //Retrieve instance of buy order manager
-    let manager = PancakeSwapManager.getBuyOrderManager();
-
-    //Retrieve data required 
-    buyOrder = await prisma.buyOrder.findUnique({
-        where : {
-            id: buyOrder
-        },
-        include: {
-            buyOrders: {
-                include : {
-                    user: {
-                        include : {
-                            bot : true
-                        }
-                    }
-                }
-            }
-        }
-    })
-
-    //Start a new bot instance with the data
-    manager.start({ 
-        buyOrder : buyOrder,
-        user : buyOrder.user,
-        bot : buyOrder.user.bot
-    });
-
-    return buyOrder;
-}
-
-/**
  * Find the db entry with the correct id
  * @param {Id} buyOrderId 
  * @returns 
@@ -102,32 +50,8 @@ exports.update = (fields) => {
             pairAddress: fields.pairAddress,
             slippage: parseInt(fields.slippage),
             amountGiven:parseFloat(fields.amountGiven),
-            buyOrderStatusId: statusId
-        },
-    })
-}
-
-/**
- * Deletes a db entry given the id
- * @param {Id} buyOrderId 
- * @returns 
- */
-exports.delete = async (buyOrderId) => {
-
-    let buyOrder = await this.find(buyOrderId)
-
-    //If the status given is 1
-    if (buyOrder.buyOrderStatusId == 1) {
-        
-        //Stop the buy order
-        let manager = PancakeSwapManager.getBuyOrderManager();
-        manager.stop({ buyOrder : buyOrder});
-    }
-
-    //Create database row
-    return prisma.buyOrder.delete({
-        where: {
-            id: parseInt(buyOrderId)    ,
+            autoMultiplier : parseFloat(fields.autoMultiplier),
+            maxTime: parseInt(fields.maxTime)
         },
     })
 }

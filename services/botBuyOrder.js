@@ -19,9 +19,11 @@ exports.start = async (req) => {
             pairAddress: req.body.pairAddress,
             slippage: parseInt(req.body.slippage),
             amountGiven:parseFloat(req.body.amountGiven),
+            autoMultiplier : parseFloat(req.body.autoMultiplier),
             userId: parseInt(req.body.userId),
             blockchainId: parseInt(req.body.blockchainId),
-            buyOrderStatusId: parseInt(req.body.buyOrderStatusId)
+            buyOrderStatusId: parseInt(req.body.buyOrderStatusId),
+            maxTime: parseInt(req.body.maxTime)
         }
     })
 

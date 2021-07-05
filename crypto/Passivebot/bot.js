@@ -69,22 +69,7 @@ class Bot {
                  'function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)'],
                 this.account
               );
-
-            const liquidityRouter = new ethers.Contract(
-                contractProcessedData.pairAddress,
-                ['function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)'],
-                this.account
-            );
-
-            //Define router to approve amount  to send
-            const currencyRouter = new ethers.Contract(
-                currencyToken.address,
-                [
-                  'function approve(address spender, uint amount) public returns(bool)',
-                ],
-                this.account
-              );
-
+              
             //Define parameters for trading
             const path = [currencyToken.address, newToken.address]
             const to   = this.bot.walletAddress 
@@ -166,7 +151,7 @@ class Bot {
                 tradeWindowId : tradeWindow.id
             })
 
-            this.asyncSellSwap(contractProcessedData, currentTokens, swapRouter, newTokenRouter, liquidityRouter, tradeWindow, transactions, this.bot.maxTime, this.bot.autoMultiplier, this.bot.initialAmount);
+            this.asyncSellSwap(contractProcessedData, currentTokens, swapRouter, tradeWindow, transactions, this.bot.maxTime, this.bot.autoMultiplier, this.bot.initialAmount);
         }
     }
 
@@ -288,7 +273,7 @@ class Bot {
     }
 
     //Async function which will try to sell every couple of seconds
-    async asyncSellSwap(contractProcessedData, currentTokens, swapRouter, newTokenRouter, liquidityRouter, tradeWindow, transactions, maxTime, multiplier, initialAmount) {        
+    async asyncSellSwap(contractProcessedData, currentTokens, swapRouter, tradeWindow, transactions, maxTime, multiplier, initialAmount) {        
         
         console.log('Entered Sales for ' + contractProcessedData.uniswapNewtoken.address)
         //Initialize variable

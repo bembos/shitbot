@@ -324,8 +324,7 @@ class NewPairListener {
                 tokenHolders.totalSupply = tokenHolders.totalSupply - value;
                 return;
             }
-
-                        
+               
             //If the transfer was to this address, then just reduce the tokens that someone has
             if (to == pairAddress) {
                 
@@ -367,8 +366,6 @@ class NewPairListener {
                     liquidityHolders.holders.push({ address : to, value : value, contract: contract});
                 }
             }
-
-            //If is a exchange between address just save it
         });
 
         //Sort both arrays
@@ -377,8 +374,8 @@ class NewPairListener {
         //After 10 minutes stop listening to transfer events
         setTimeout(() => {
 
-            tokenRouter.removeAllListeners();
-            liquidityRouter.removeAllListeners();
+            tokenRouter.removeAllListeners('Transfer');
+            liquidityRouter.removeAllListeners('Transfer');
         }, 30000)
 
         return [tokenHolders, liquidityHolders];
