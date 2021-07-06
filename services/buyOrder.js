@@ -51,7 +51,8 @@ exports.update = (fields) => {
             slippage: parseInt(fields.slippage),
             amountGiven:parseFloat(fields.amountGiven),
             autoMultiplier : parseFloat(fields.autoMultiplier),
-            maxTime: parseInt(fields.maxTime)
+            maxTime: parseInt(fields.maxTime),
+            buyOrderStatusId: parseInt(fields.buyOrderStatusId)
         },
     })
 }

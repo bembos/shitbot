@@ -5,6 +5,10 @@ var path = require('path');
 //Set up env
 require('dotenv').config()
 
+//csrf token
+var csrf = require('csurf')
+var csrfProtection = csrf({ cookie: true })
+
 //Set up the app
 var app = express();
 
@@ -18,11 +22,11 @@ const session = require('express-session');
 //Database session store
 var MySQLStore = require('express-mysql-session')(session);
 var options = {
-	host: 'localhost',
-	port: 3306,
-	user: 'root',
-	password: 'sonsof11',
-	database: 'shitbot'
+	host: process.env.HOST,
+	port: process.env.PORT,
+	user: process.env.USER,
+	password: process.env.PASSWORD,
+	database: process.env.DATABASE
 };
 var sessionStore = new MySQLStore(options);
 app.use(session({ secret : 'secret', resave : true, saveUninitialized : true , store: sessionStore}));
@@ -73,7 +77,7 @@ const urlHelper = require('./middleware/path');
 var indexRouter = require('./routes/index');
 var errorRouter = require('./routes/error');
 
-app.use('/', urlHelper.currentUrl, indexRouter);
+app.use('/', urlHelper.currentUrl, csrfProtection, indexRouter);
 app.use(errorRouter);
 
 app.listen(3000);

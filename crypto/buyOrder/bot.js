@@ -36,7 +36,7 @@ class Bot{
     onMint = async function (sender, amount0, amount1){
 
         //Sleep the required amount of time
-        await sleepHelper.sleep(1000);
+        //await sleepHelper.sleep(1000);
 
         let tokenOutAddress = this.buyOrder.address;
 
@@ -44,7 +44,8 @@ class Bot{
         const swapRouter = new ethers.Contract(
             this.router,
             ['function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)',
-             'function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)',],
+             'function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)',
+             'function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)'],
             this.account
           );
 
@@ -61,6 +62,7 @@ class Bot{
         //Define parameters for trading
         const path       = [this.currencyTokenAddress, tokenOutAddress]
         const to         = this.bot.walletAddress 
+        
         let amountIn     = ethers.utils.parseUnits(this.buyOrder.amountGiven.toString(), this.currencyDecimals);
         let amounts      = await swapRouter.getAmountsOut(amountIn, path);
         let amountOutMin = amounts[1].sub(amounts[1].mul(this.buyOrder.slippage).div(100));
@@ -71,15 +73,12 @@ class Bot{
             
         try {
              //Perform trade
-             tx = await swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, {value: amountIn, gasLimit: '250000', gasPrice: ethers.utils.parseUnits('8', 'gwei') })
+             tx = await swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, {value: amountIn})
              receipt = await tx.wait();
         } catch (error) {
             console.log(error);
-            console.log(receipt);
         }
-       
-        console.log('Buy Order receipt: ' + receipt);
-        
+               
         //Get status
         const status = receipt.status == 0 ? 3 : 2;
 
@@ -92,14 +91,14 @@ class Bot{
             amountGiven: this.buyOrder.amountGiven,
             autoMultiplier : this.buyOrder.autoMultiplier,
             maxTime: this.buyOrder.maxTime,
-            statusId: status
+            buyOrderStatusId: status
         })
 
         //Removes all listener for safety
-        this.mintContract.removeAllListeners();
+        this.mintContract.removeAllListeners('Mint');
 
         //If there is no auto multiplier return
-        if (this.buyOrder.autoMultiplier == 0 || status == 2) { 
+        if (this.buyOrder.autoMultiplier == 0 || status == 3) { 
             this.events.emit('finished');
             return; 
         } 
@@ -108,13 +107,14 @@ class Bot{
         let currentTokens = await newTokenRouter.balanceOf(this.bot.walletAddress);
         let tokenDecimals = await newTokenRouter.decimals();
 
+        console.log("tokens received: " + currentTokens);
+
         //Approve selling the token
         try {
-            await newTokenRouter.approve(this.router, currentTokens, {gasLimit: '250000', gasPrice: ethers.utils.parseUnits('8', 'gwei') });
+            await newTokenRouter.approve(this.router, currentTokens);
         } catch (error) {
             console.log(error);
         }
-
 
         //Create needed 
         let currencyToken = new Token(ChainId.BSCMAINNET, this.currencyTokenAddress, this.currencyDecimals)
@@ -162,7 +162,7 @@ class Bot{
                 //Perform swap
                 let receipt;
                 try { 
-                    let tx = await routerV2.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, { gasLimit: '250000', gasPrice: ethers.utils.parseUnits('6', 'gwei')  })
+                    let tx = await routerV2.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10)
                     receipt = await tx.wait();
                 } catch (error) {
                     console.log("COULDN't SELL:" + newToken.address)
@@ -193,7 +193,7 @@ class Bot{
             //Perform swap
             let receipt;
             try { 
-                let tx = await swapRouter.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, { gasLimit: '250000', gasPrice: ethers.utils.parseUnits('10', 'gwei')  })
+                let tx = await swapRouter.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10)
                 receipt = await tx.wait();
             } catch (error) {
                 console.log("COULDN't SELL in last effort:" + newToken.address)
@@ -212,7 +212,7 @@ class Bot{
             amountGiven: this.buyOrder.amountGiven,
             autoMultiplier : this.buyOrder.autoMultiplier,
             maxTime: this.buyOrder.maxTime,
-            statusId: status
+            buyOrderStatusId: status
         })
 
         this.events.emit('finished');
@@ -230,7 +230,7 @@ class Bot{
                                 ['event Mint(address indexed sender, uint amount0, uint amount1)'],
                                 this.account
                             );
-
+        
         //Set up the the funnctions
         this.mintContract.on('Mint', this.onMint.bind(this));
     }

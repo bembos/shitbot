@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 async function main() {
 
     //Seed users
-    user = await prisma.user.create({
+    await prisma.user.create({
         data: {
             email: 'fabio.olcese@gmail.com',
             password: await bcrypt.hash('sonsof11', 12),
@@ -13,6 +13,22 @@ async function main() {
         },
     })
 
+    await prisma.user.create({
+        data: {
+            email: 'diego.cor.mik@gmail.com',
+            password: await bcrypt.hash('zephiross', 12),
+            username: 'Zephero',
+        },
+    })
+
+    await prisma.user.create({
+        data: {
+            email: 'orlando.ol@hotmail.com',
+            password: await bcrypt.hash('sonsof11', 12),
+            username: 'lalo',
+        },
+    })
+    
     //Blockchains
     await prisma.blockchain.create({
         data: {
