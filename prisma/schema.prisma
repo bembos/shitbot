@@ -13,6 +13,7 @@ model User {
   password               String
   username               String?
   bot                    Bot?
+  buyOrderConfiguration  BuyOrderConfiguration?                
   buyOrders              BuyOrder[]                
   generalConstraints     GeneralConstraints?
   contractCodeConstaints UserContractCodeCons[]
@@ -36,6 +37,20 @@ model BuyOrderStatus {
   @@map(name: "buy_order_statuses")
 }
 
+model BuyOrderConfiguration {
+  id                Int             @id @default(autoincrement())
+  slippage          Int
+  amountGiven       Float           @map(name: "amount_given")
+  autoMultiplier    Float?          @map(name: "auto_multiplier")
+  maxTime           Int             @map(name: "max_time")
+  timeBeforeBuy     Int             @map(name: "time_before_buy")
+  gasfees           Int             @map(name: "gas_fees")
+  user              User            @relation(fields: [userId], references: [id])
+  userId            Int             @map(name: "user_id")
+
+  @@map(name: "buy_orders_configurations")
+}
+
 model BuyOrder {
   id                Int             @id @default(autoincrement())
   label             String?
@@ -45,6 +60,8 @@ model BuyOrder {
   amountGiven       Float           @map(name: "amount_given")
   autoMultiplier    Float?          @map(name: "auto_multiplier")
   maxTime           Int             @map(name: "max_time")
+  gasfees           Int             @map(name: "gas_fees")
+  timeBeforeBuy     Int             @map(name: "time_before_buy")
   createdAt         DateTime        @default(now()) @map(name: "created_at")
   completedAt       DateTime?       @map(name: "completed_at")
   user              User            @relation(fields: [userId], references: [id])

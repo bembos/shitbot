@@ -23,7 +23,9 @@ exports.start = async (req) => {
             userId: parseInt(req.body.userId),
             blockchainId: parseInt(req.body.blockchainId),
             buyOrderStatusId: parseInt(req.body.buyOrderStatusId),
-            maxTime: parseInt(req.body.maxTime)
+            maxTime: parseInt(req.body.maxTime),
+            timeBeforeBuy: parseInt(req.body.timeBeforeBuy),
+            gasfees : parseInt(req.body.gasfees)
         }
     })
 

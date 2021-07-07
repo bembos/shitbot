@@ -12,6 +12,7 @@ const buyOrderController = require('../controllers/buyOrder.js');
 const constraintController = require('../controllers/constraint.js');
 const tradeWindowController = require('../controllers/tradeWindow.js');
 const codeConstraintController = require('../controllers/codeConstraint.js');
+const buyOrderConfigurationController = require('../controllers/buyOrderConfiguration.js');
 
 //Validation
 const authValidation = require('../validators/auth');
@@ -44,6 +45,9 @@ router.put('/constraints/contract-code/edit', auth, codeConstraintController.edi
 router.delete('/constraints/contract-code/delete', auth, codeConstraintController.delete);
 
 //Buy Orders
+router.get('/buy-orders/configuration', auth, buyOrderConfigurationController.index);
+router.post('/buy-orders/configuration', auth, buyOrderConfigurationController.configure)
+
 router.get('/buy-orders', auth, buyOrderController.index);
 router.get('/buy-orders/create', auth, buyOrderController.showCreate);
 router.post('/buy-orders/create', auth, buyOrderController.create);

@@ -6,7 +6,7 @@ const prisma = new PrismaClient()
  * @param {User} user 
  * @returns 
  */
-exports.retrieveUserWithBuyOrders = (user) => {
+exports.retrieveUserWithBuyOrdersAndConf = (user) => {
     return prisma.user.findUnique({
         where : {
             id: user.id
@@ -16,7 +16,8 @@ exports.retrieveUserWithBuyOrders = (user) => {
                 include : {
                     buyOrderStatus: true
                 }
-            }
+            },
+            buyOrderConfiguration : true
         }
     })
 }
@@ -52,7 +53,9 @@ exports.update = (fields) => {
             amountGiven:parseFloat(fields.amountGiven),
             autoMultiplier : parseFloat(fields.autoMultiplier),
             maxTime: parseInt(fields.maxTime),
-            buyOrderStatusId: parseInt(fields.buyOrderStatusId)
+            buyOrderStatusId: parseInt(fields.buyOrderStatusId),
+            timeBeforeBuy: parseInt(fields.timeBeforeBuy),
+            gasfees : parseInt(fields.gasfees)
         },
     })
 }

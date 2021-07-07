@@ -1,0 +1,69 @@
+<div class="app-content content">
+    <div class="content-wrapper">
+      <div class="content-body"><!-- Basic Inputs start -->
+        <section class="textarea-select">
+        <!-- Textarea start -->
+          <%- include ('../layout/partials/messages') %>
+          <div class="row">
+            <div class="col-12 mt-3 mb-1">
+                <h4 class="text-uppercase">Bot Configuration</h4>
+                <p>Basic passive bot configuration </p>
+            </div>
+          </div>
+          <div class="row match-height">
+            <div class="col-lg-9 col-md-12">
+                <div class="card">
+                    <p>Used to facilitate entering information on buy orders</p>
+                    <div class="card-header">
+                        <h4 class="card-title">Buy Order Configuration</h4>
+                    </div>
+                    <div class="card-block">
+                        <div class="card-body">
+                          <div class="card-body">
+                            <form action="/buy-orders/configuration" method="POST">
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                <input type="hidden" name="configuration" value="<%= configuration.id%>">
+
+                                <h5 class="mt-2">Slippage</h5>
+                                <fieldset class="form-group">
+                                <input type="number" class="form-control" name="slippage" value="<%= configuration.slippage %>">
+                                </fieldset>
+
+                                <h5 class="mt-2">Amount Given (BNB)</h5>
+                                <fieldset class="form-group">
+                                <input type="number" step="0.001" class="form-control" name="amountGiven" value="<%= configuration.amountGiven %>">
+                                </fieldset>
+
+                                <h5 class="mt-2">Multiplier Expected (If 0, it won't sell)</h5>
+                                <fieldset class="form-group">
+                                <input type="number" step="0.1" class="form-control" id="placeholderInput" name="autoMultiplier" value="<%= configuration.autoMultiplier %>">
+                                </fieldset>
+
+                                <h5 class="mt-2">Max Time to wait (seconds) before trading (useful in some cases)</h5>
+                                <fieldset class="form-group">
+                                <input type="number" class="form-control" id="placeholderInput" name="timeBeforeBuy" value="<%= configuration.timeBeforeBuy %>">
+                                </fieldset>
+
+                                <h5 class="mt-2">Gas fees (Wei | 5 = low, 15 = above average, 20 = fast)</h5>
+                                <fieldset class="form-group">
+                                <input type="number" class="form-control" name="gasfees" value="<%= configuration.gasfees %>">
+                                </fieldset>
+
+                                <h5 class="mt-2">Max Time per Trade (seconds) before forced sale</h5>
+                                <fieldset class="form-group">
+                                <input type="number" class="form-control" id="placeholderInput" name="maxTime" value="<%= configuration.maxTime %>">
+                                </fieldset>
+  
+                              <button type="submit" class="btn mr-1 mb-1 btn-success btn-lg">Save</button>
+                            </form>
+                          </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+        <!-- Textarea end -->
+        </section>
+      </div>
+    </div>
+  </div>

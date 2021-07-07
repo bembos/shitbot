@@ -39,22 +39,32 @@
 
                               <h5 class="mt-2">Slippage</h5>
                               <fieldset class="form-group">
-                                <input type="number" class="form-control" name="slippage">
+                                <input type="number" class="form-control" name="slippage" value="<%= configuration.slippage %>">
                               </fieldset>
 
                               <h5 class="mt-2">Amount Given (BNB)</h5>
                               <fieldset class="form-group">
-                                <input type="number" step="0.001" class="form-control" name="amountGiven">
+                                <input type="number" step="0.001" class="form-control" name="amountGiven" value="<%= configuration.amountGiven %>">
                               </fieldset>
 
                               <h5 class="mt-2">Multiplier Expected (If 0, it won't sell)</h5>
                               <fieldset class="form-group">
-                                <input type="number" step="0.1" class="form-control" id="placeholderInput" name="autoMultiplier">
+                                <input type="number" step="0.1" class="form-control" id="placeholderInput" name="autoMultiplier" value="<%= configuration.autoMultiplier %>">
+                              </fieldset>
+
+                              <h5 class="mt-2">Max Time to wait (seconds) before trading (useful in some cases)</h5>
+                              <fieldset class="form-group">
+                                <input type="number" class="form-control" id="placeholderInput" name="timeBeforeBuy" value="<%= configuration.timeBeforeBuy %>">
+                              </fieldset>
+
+                              <h5 class="mt-2">Gas fees (Wei | 5 = low, 15 = above average, 20 = fast)</h5>
+                              <fieldset class="form-group">
+                                <input type="number" class="form-control" name="gasfees" value="<%= configuration.gasfees %>">
                               </fieldset>
 
                               <h5 class="mt-2">Max Time per Trade (seconds) before forced sale</h5>
                               <fieldset class="form-group">
-                                <input type="number" class="form-control" id="placeholderInput" name="maxTime">
+                                <input type="number" class="form-control" id="placeholderInput" name="maxTime" value="<%= configuration.maxTime %>">
                               </fieldset>
 
                             <button type="submit" class="btn mr-1 mb-1 btn-success btn-lg">Save</button>

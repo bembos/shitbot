@@ -1,6 +1,7 @@
 //Code constraint Service handler
 const buyOrderService = require('../services/buyOrder');
 const botBuyOrderService = require('../services/botBuyOrder');
+const buyOrderConfigurationService = require('../services/buyOrderConfiguration');
 
 //Format date utility
 const moment = require('moment');
@@ -8,7 +9,12 @@ const moment = require('moment');
 exports.index = async (req, res, next) => {
   
     //Retrieve user with code constraints
-    var user = await buyOrderService.retrieveUserWithBuyOrders(req.user);
+    var user = await buyOrderService.retrieveUserWithBuyOrdersAndConf(req.user);
+
+    //Create default
+    if (!user.buyOrderConfiguration) {np
+        user.buyOrderConfiguration = await buyOrderConfigurationService.createDefault({user: user.id})
+    }
   
     var buyOrders = user.buyOrders;
   
@@ -18,9 +24,9 @@ exports.index = async (req, res, next) => {
 exports.showCreate = async (req, res, next) => {
   
     //Retrieve user with code constraints
-    var user = req.user;
+    var user = await buyOrderConfigurationService.retrieveWithConfiguration(req.user);
     
-    res.render('buy-orders/create', {user: user, csrfToken: req.csrfToken()});
+    res.render('buy-orders/create', {configuration: user.buyOrderConfiguration, user: user, csrfToken: req.csrfToken()});
 };
 
 exports.create = async (req, res, next) => {

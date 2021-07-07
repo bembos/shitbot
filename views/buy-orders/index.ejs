@@ -13,7 +13,10 @@
                 <div class="card-header">
                     <h4 class="card-title">Buy Orders Table</h4>
                     <a class="heading-elements-toggle"><i class="la la-ellipsis-v font-medium-3"></i></a>
-                    <div class="heading-elements">
+                    <div class="heading-elements row">
+                        <form action="/buy-orders/configuration" method="GET">
+                            <button type="submit" class="btn btn-primary btn-min-width mr-1 mb-1">Configuration</button>
+                        </form>
                         <form action="/buy-orders/create" method="GET">
                             <button type="submit" class="btn btn-primary btn-min-width mr-1 mb-1">Create</button>
                         </form>
