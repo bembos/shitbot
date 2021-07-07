@@ -21,12 +21,14 @@
                           <% if (!bot.enabled) { %> 
                             <p class="card-subtitle">Bot is currently offline</p>
                             <form action="/bot/start" method="POST">
+                              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                               <button type="submit" class="btn mr-1 mb-1 btn-success btn-lg">Start</button>
                             </form>
                           <% } %>
                           <% if (bot.enabled) { %> 
                             <p class="card-subtitle">Bot is currently online</p>
                             <form action="/bot/stop" method="POST">
+                              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                               <button type="submit" class="btn mr-1 mb-1 btn-warning btn-lg">Stop</button>
                             </form>
                           <% } %>
@@ -43,6 +45,7 @@
                       <div class="card-body">
                         <div class="card-body">
                           <form action="/bot/configuration/<%= bot.id %>" method="POST">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
                             <h5 class="mt-2">Wallet Public Key</h5>
                             <fieldset class="form-group">

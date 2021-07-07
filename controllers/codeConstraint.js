@@ -8,7 +8,7 @@ exports.index = async (req, res, next) => {
   
     var constraints = user.contractCodeConstaints;
   
-    res.render('constraints/contract-code/index', {constraints: constraints});
+    res.render('constraints/contract-code/index', {constraints: constraints, csrfToken: req.csrfToken()});
 };
 
 exports.showCreate = async (req, res, next) => {
@@ -16,7 +16,7 @@ exports.showCreate = async (req, res, next) => {
     //Retrieve user with code constraints
     var user = req.user;
     
-    res.render('constraints/contract-code/create', {user: user});
+    res.render('constraints/contract-code/create', {user: user, csrfToken: req.csrfToken()});
 };
 
 exports.create = async (req, res, next) => {
@@ -38,7 +38,7 @@ exports.showEdit = async (req, res, next) => {
         res.redirect('/constraints/contract-code/');
     }
     
-    res.render('constraints/contract-code/edit', {constraint: constraint});
+    res.render('constraints/contract-code/edit', {constraint: constraint, csrfToken: req.csrfToken()});
 };
 
 exports.edit = async (req, res, next) => {

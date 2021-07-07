@@ -5,6 +5,7 @@
         <div class="col-xl-4 col-lg-6 col-md-12">
             <%- include ('../layout/partials/messages') %>
             <form action="/login" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <div class="card">
                     <div class="card-header">
                         <h4 class="card-title">Login</h4>

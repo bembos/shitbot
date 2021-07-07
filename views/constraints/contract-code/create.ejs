@@ -19,6 +19,7 @@
                             <form action="/constraints/contract-code/create" method="POST" enctype="application/x-www-form-urlencoded">
                               <input type="hidden" name="userId" value="<%=user.id%>">
                               <input type="hidden" name="contractCodeConstraintId" value="1">
+                              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
                               <h5 class="mt-2">Label</h5>
                               <fieldset class="form-group">

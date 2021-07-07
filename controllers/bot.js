@@ -9,7 +9,7 @@ exports.index = async (req, res, next) => {
   //Retrieve user's bot configuration
   var bot = user.bot ? user.bot :  await botService.createBotForUser(user);
 
-  res.render('bot', {bot: bot});
+  res.render('bot', {bot: bot, csrfToken: req.csrfToken()});
 };
 
 exports.configureBot = async (req, res, next) => {

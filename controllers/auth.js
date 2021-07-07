@@ -2,7 +2,7 @@
 const passport = require('passport');
 
 exports.login = (req, res, next) => {
-  res.render('auth/login');
+  res.render('auth/login', {csrfToken: req.csrfToken()});
 };
 
 exports.authenticate = (req, res, next) => {

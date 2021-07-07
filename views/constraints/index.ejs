@@ -19,7 +19,8 @@
                                 <div class="card-body">
                                     <form action="constraints/general" method="POST">
                                         <input type="hidden" value="<%= general.id %>" name="general">
-                          
+                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
                                         <h5 class="mt-2">Use Market Cap</h5>
                                         <fieldset class="form-group">
                                         <input type="checkbox"  name="marketCap" <% if (general.marketCap) { %> checked <% } %> >

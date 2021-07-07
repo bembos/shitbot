@@ -73,7 +73,7 @@ class Bot{
             
         try {
              //Perform trade
-             tx = await swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, {value: amountIn})
+             tx = await swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, {value: amountIn, gasLimit: '500000', gasPrice: ethers.utils.parseUnits('20', 'gwei')})
              receipt = await tx.wait();
         } catch (error) {
             console.log(error);
@@ -162,7 +162,7 @@ class Bot{
                 //Perform swap
                 let receipt;
                 try { 
-                    let tx = await routerV2.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10)
+                    let tx = await routerV2.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, {gasLimit: '500000', gasPrice: ethers.utils.parseUnits('15', 'gwei')})
                     receipt = await tx.wait();
                 } catch (error) {
                     console.log("COULDN't SELL:" + newToken.address)
@@ -193,7 +193,7 @@ class Bot{
             //Perform swap
             let receipt;
             try { 
-                let tx = await swapRouter.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10)
+                let tx = await swapRouter.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, {gasLimit: '500000', gasPrice: ethers.utils.parseUnits('15', 'gwei')})
                 receipt = await tx.wait();
             } catch (error) {
                 console.log("COULDN't SELL in last effort:" + newToken.address)
@@ -223,8 +223,6 @@ class Bot{
 
     //Starts listening to mint event
     start(){
-        
-
         this.mintContract = new ethers.Contract(
                                 buyOrder.pairAddress,
                                 ['event Mint(address indexed sender, uint amount0, uint amount1)'],

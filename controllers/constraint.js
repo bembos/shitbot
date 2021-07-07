@@ -9,7 +9,7 @@ exports.index = async (req, res, next) => {
   //Retrieve user's general constraints 
   var general = user.generalConstraints ? user.generalConstraints :  await constraintService.createGeneralContraintsForUser(user);
 
-  res.render('constraints/index', {general: general});
+  res.render('constraints/index', {general: general, csrfToken: req.csrfToken()});
 };
 
 exports.configureGeneralConstraints = async (req, res, next) => {

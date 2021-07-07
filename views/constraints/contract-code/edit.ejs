@@ -19,6 +19,7 @@
                             <form action="/constraints/contract-code/edit" method="POST" enctype="application/x-www-form-urlencoded">
                               <input type="hidden" name="constraintId" value="<%= constraint.id %>">
                               <input type="hidden" name="_method" value="PUT">
+                              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
                               <h5 class="mt-2">Label</h5>
                               <fieldset class="form-group">

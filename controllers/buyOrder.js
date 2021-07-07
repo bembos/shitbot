@@ -12,7 +12,7 @@ exports.index = async (req, res, next) => {
   
     var buyOrders = user.buyOrders;
   
-    res.render('buy-orders/index', {buyOrders: buyOrders, moment: moment});
+    res.render('buy-orders/index', {buyOrders: buyOrders, moment: moment, csrfToken: req.csrfToken()});
 };
 
 exports.showCreate = async (req, res, next) => {
@@ -20,7 +20,7 @@ exports.showCreate = async (req, res, next) => {
     //Retrieve user with code constraints
     var user = req.user;
     
-    res.render('buy-orders/create', {user: user});
+    res.render('buy-orders/create', {user: user, csrfToken: req.csrfToken()});
 };
 
 exports.create = async (req, res, next) => {
@@ -35,7 +35,7 @@ exports.showEdit = async (req, res, next) => {
   
     var buyOrder = await buyOrderService.find(req.params.buyOrder);
     
-    res.render('buy-orders/edit', {buyOrder: buyOrder});
+    res.render('buy-orders/edit', {buyOrder: buyOrder, csrfToken: req.csrfToken()});
 };
 
 exports.edit = async (req, res, next) => {
