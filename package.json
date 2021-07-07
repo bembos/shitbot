@@ -3,8 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "nodemon app.js",
-    "seed": "node ./prisma/seed.js"
+    "start": "node app.js",
+    "seed": "node ./prisma/seed.js",
+    "nodemon": "nodemon app.js"
   },
   "dependencies": {
     "@prisma/client": "^2.24.1",
