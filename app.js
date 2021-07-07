@@ -22,11 +22,11 @@ const session = require('express-session');
 //Database session store
 var MySQLStore = require('express-mysql-session')(session);
 var options = {
-	host: process.env.HOST,
-	port: parseInt(process.env.PORT),
-	user: process.env.USER,
-	password: process.env.PASSWORD,
-	database: process.env.DATABASE
+	host: process.env.DB_HOST,
+	port: parseInt(process.env.DB_PORT),
+	user: process.env.DB_USER,
+	password: process.env.DB_PASSWORD,
+	database: process.env.DB_DATABASE
 };
 var sessionStore = new MySQLStore(options);
 app.use(session({ secret : 'secret', resave : true, saveUninitialized : true , store: sessionStore}));
@@ -80,6 +80,6 @@ var errorRouter = require('./routes/error');
 app.use('/', urlHelper.currentUrl, csrfProtection, indexRouter);
 app.use(errorRouter);
 
-app.listen(3000);
+app.listen(process.env.PORT || 3000);
 
 module.exports = app;
