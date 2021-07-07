@@ -38,6 +38,9 @@ class Bot{
         //Sleep the required amount of time
         //await sleepHelper.sleep(1000);
 
+        //Safety frst
+        this.mintContract.removeAllListeners('Mint');
+
         let tokenOutAddress = this.buyOrder.address;
 
         //Set up routers
@@ -94,9 +97,7 @@ class Bot{
             buyOrderStatusId: status
         })
 
-        //Removes all listener for safety
-        this.mintContract.removeAllListeners('Mint');
-
+        
         //If there is no auto multiplier return
         if (this.buyOrder.autoMultiplier == 0 || status == 3) { 
             this.events.emit('finished');
@@ -199,8 +200,6 @@ class Bot{
                 console.log("COULDN't SELL in last effort:" + newToken.address)
                 console.log(error);
             }
-
-            console.log('SOLD AT LESS')
         }
 
         //Update buy order

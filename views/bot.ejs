@@ -7,7 +7,7 @@
         <div class="row">
           <div class="col-12 mt-3 mb-1">
               <h4 class="text-uppercase">Bot Configuration</h4>
-              <p>Since you are giving your private key, tt is recommended that you use a dummy wallet account. </p>
+              <p>Basic passive bot configuration </p>
           </div>
         </div>
         <div class="row match-height">
@@ -47,16 +47,6 @@
                           <form action="/bot/configuration/<%= bot.id %>" method="POST">
                             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
-                            <h5 class="mt-2">Wallet Public Key</h5>
-                            <fieldset class="form-group">
-                              <input type="text" class="form-control" id="placeholderInput" name="walletAddress" value="<%= bot.walletAddress %>">
-                            </fieldset>
-
-                            <h5 class="mt-2">Wallet Private Key</h5>
-                            <fieldset class="form-group">
-                              <input type="text" class="form-control" id="placeholderInput" name="walletPrivate" value="<%= bot.walletPrivate %>">
-                            </fieldset>
-      
                             <h5 class="mt-2">Initial Amount (BNB)</h5>
                             <fieldset class="form-group">
                               <input type="number" step="0.001" class="form-control" id="placeholderInput" name="initialAmount" value="<%= bot.initialAmount %>">

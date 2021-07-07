@@ -7,6 +7,7 @@ const {auth, guest} = require('../middleware/auth');
 //Controllers
 const botController = require('../controllers/bot.js');
 const authController = require('../controllers/auth.js');
+const userController = require('../controllers/user.js');
 const buyOrderController = require('../controllers/buyOrder.js');
 const constraintController = require('../controllers/constraint.js');
 const tradeWindowController = require('../controllers/tradeWindow.js');
@@ -19,6 +20,10 @@ const authValidation = require('../validators/auth');
 router.get('/login', guest, authController.login);
 router.post('/login', guest, authValidation.login, authController.authenticate);
 router.post('/logout', auth, authController.logout);
+
+//User routes
+router.get('/user', auth, userController.index);
+router.post('/user/configuration/:bot', auth, userController.configure)
 
 //Bot routes
 router.get('/bot', auth, botController.index);

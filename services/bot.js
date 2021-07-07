@@ -17,8 +17,6 @@ exports.createBotForUser = (user) => {
             slippage: 13,
             maxTransaction : 5,
             maxTime: 600,
-            walletAddress: '-',
-            walletPrivate: '-',
             userId: user.id
         }
     })
@@ -40,9 +38,7 @@ exports.updateBot = (req, botId) => {
             autoMultiplier : parseFloat(req.body.autoMultiplier),
             slippage : parseInt(req.body.slippage),
             maxTransaction : parseInt(req.body.maxTransaction),
-            maxTime: parseInt(req.body.maxTime),
-            walletAddress: req.body.walletAddress,
-            walletPrivate: req.body.walletPrivate
+            maxTime: parseInt(req.body.maxTime)
         }
     })
 }
