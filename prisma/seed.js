@@ -28,6 +28,14 @@ async function main() {
             username: 'lalo',
         },
     })
+
+    await prisma.user.create({
+        data: {
+            email: 'papita@gmail.com',
+            password: await bcrypt.hash('papita12345', 12),
+            username: 'ppta',
+        },
+    })
     
     //Blockchains
     await prisma.blockchain.create({
