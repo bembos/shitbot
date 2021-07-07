@@ -12,7 +12,7 @@ exports.index = async (req, res, next) => {
     var user = await buyOrderService.retrieveUserWithBuyOrdersAndConf(req.user);
 
     //Create default
-    if (!user.buyOrderConfiguration) {np
+    if (!user.buyOrderConfiguration) {
         user.buyOrderConfiguration = await buyOrderConfigurationService.createDefault({user: user.id})
     }
   
