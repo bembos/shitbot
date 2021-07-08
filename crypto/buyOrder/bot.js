@@ -5,6 +5,7 @@ const { Token } = require('@uniswap/sdk');
 //Services
 const buyOrderService = require('../../services/buyOrder');
 const buyOrderStatusService = require('../../services/buyOrderStatus');
+const buyOrderLogMessageService = require('../../services/buyOrderLogMessage');
 
 //Utilities
 const sleepHelper = require('../utilities/sleep');
@@ -52,7 +53,7 @@ class Bot{
             this.account
           );
 
-        //Create router to sel
+        //Create router to sell
         const newTokenRouter = new ethers.Contract(
             tokenOutAddress,
             ['function balanceOf(address account) public view returns (uint256)',
@@ -77,10 +78,15 @@ class Bot{
          
         try {
              //Perform trade
-             tx = await swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, {value: amountIn, gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
+             tx      = await swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, {value: amountIn, gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
              receipt = await tx.wait();
         } catch (error) {
             console.log(error);
+
+            await buyOrderLogMessageService.create({
+                content: "Error " + error,
+                buyOrderId: this.buyOrder.id
+            })
         }
                
         //Get status
@@ -88,6 +94,11 @@ class Bot{
 
         if (receipt.status == 0) {
             status = await buyOrderStatusService.find("Failed");
+
+            await buyOrderLogMessageService.create({
+                content: "Failed to buy",
+                buyOrderId: this.buyOrder.id
+            })
         }
         else if (this.buyOrder.autoMultiplier == 0){
             status = await buyOrderStatusService.find("Completed");
@@ -122,11 +133,14 @@ class Bot{
         let currentTokens = await newTokenRouter.balanceOf(this.bot.walletAddress);
         let tokenDecimals = await newTokenRouter.decimals();
 
-        console.log("tokens received: " + currentTokens);
-
+        await buyOrderLogMessageService.create({
+                content: "Bought " + currentTokens,
+                buyOrderId: this.buyOrder.id
+            })
+    
         //Approve selling the token
         try {
-            await newTokenRouter.approve(this.router, currentTokens);
+            await newTokenRouter.approve(this.router, currentTokens + '0');
         } catch (error) {
             console.log(error);
         }
@@ -142,8 +156,11 @@ class Bot{
     //Async function which will try to sell every couple of seconds
     async asyncSellSwap(currencyToken, newToken, currentTokens, swapRouter,  maxTime, multiplier, initialAmount, gasfees) {        
         
-        console.log('Entered Sales for ' + newToken.address)
-
+        await buyOrderLogMessageService.create({
+                content: "Waiting to sell",
+                buyOrderId: this.buyOrder.id
+            })
+            
         //Initialize variable
         let currentTime = 0;
         let success = 0;
@@ -151,24 +168,21 @@ class Bot{
         //Enter while loop that sleeps
         while (currentTime < maxTime) {
 
-            console.log('Sleeping ' + newToken.address);
             //Increase condition time and sleep
             currentTime = currentTime + 5;
-            await sleepHelper.sleep(5000);
+            await sleepHelper.sleep(3000);
             
-            console.log('Woke up ' + newToken.address);
-
             let amounts      = await swapRouter.getAmountsOut(currentTokens, [newToken.address, currencyToken.address]);
-            let amountOutMin = ethers.utils.formatUnits(amounts[1].sub(amounts[1].mul(13).div(100)), currencyToken.decimals);
-
-            console.log("time passed: " + currentTime)
-            console.log("currency if swapped: " + amountOutMin)
-            console.log("expected price: " +  multiplier * initialAmount)
+            let amountOutMin = ethers.utils.formatUnits(amounts[1], currencyToken.decimals);
+ 
+            await buyOrderLogMessageService.create({
+                content: "Wanted: " + multiplier * initialAmount + '\nCurrent trade: ' + amountOutMin,
+                buyOrderId: this.buyOrder.id
+            })
 
             //If the amount given is the desired amount
             if (amountOutMin >= multiplier * initialAmount) {
 
-                console.log('ENTERED SALES IN : ' + newToken.address)
 
                 //Initialize sell parameters
                 let amountIn     = currentTokens;
@@ -181,19 +195,24 @@ class Bot{
                     let tx = await swapRouter.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, {gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
                     receipt = await tx.wait();
                 } catch (error) {
-                    console.log("COULDN't SELL:" + newToken.address)
-                    console.log(error);
+                    await buyOrderLogMessageService.create({
+                        content: "Error: " + error,
+                        buyOrderId: this.buyOrder.id
+                    })
                     currentTime = maxTime;
                     sucesss = 0;
                 }
 
-                console.log('-------------------------------------------------------')
-                console.log('SOLD: ' + newToken.address);
-                console.log('-------------------------------------------------------')
- 
-                //Break loop
-                currentTime = maxTime;
-                success = 1;
+                if (success != 0) {
+                    await buyOrderLogMessageService.create({
+                        content: "Sold the tokens",
+                        buyOrderId: this.buyOrder.id
+                    })
+    
+                    //Break loop
+                    currentTime = maxTime;
+                    success = 1;
+                }
             }
         }
 
@@ -211,8 +230,10 @@ class Bot{
                 let tx = await swapRouter.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, {gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
                 receipt = await tx.wait();
             } catch (error) {
-                console.log("COULDN't SELL in last effort:" + newToken.address)
-                console.log(error);
+                await buyOrderLogMessageService.create({
+                        content: "Couldn't sell in last effort: Error " + error,
+                        buyOrderId: this.buyOrder.id
+                    })
             }
         }
 
@@ -240,7 +261,10 @@ class Bot{
 
         this.events.emit('finished');
 
-        console.log('Finished ' + newToken.address)
+        await buyOrderLogMessageService.create({
+            content: "The transaction has finished",
+            buyOrderId: this.buyOrder.id
+        })
     }
 
 
@@ -252,7 +276,6 @@ class Bot{
                                 ['event Mint(address indexed sender, uint amount0, uint amount1)'],
                                 this.account
                             );
-        
 
         //Set up the the funnctions
         this.mintContract.on('Mint', this.onMint.bind(this));

@@ -87,6 +87,13 @@ exports.stop = async (buyOrderId) => {
         manager.stop({ buyOrder : buyOrder});
     }
 
+    //Delete logs
+    await prisma.buyOrderLogMessage.deleteMany({
+        where: {
+            buyOrderId : parseInt(buyOrderId)
+        }
+    })
+
     //Create database row
     return prisma.buyOrder.delete({
         where: {

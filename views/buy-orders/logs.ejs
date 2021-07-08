@@ -8,16 +8,15 @@
             </div>
           </div>
           <div class="row match-height">
-            <div class="col-lg-9 col-md-12">
+            <div class="col-lg-12 col-md-12">
                 <div class="card">
                   <div class="card-header">
-                      <h4 class="card-title">Buy Order</h4>
+                      <h4 class="card-title">Buy Order - Log</h4>
                   </div>
                   <div class="card-block">
                       <div class="card-body">
                         <div class="card-body">
-                          <textarea id="logArea" style="resize: none;" cols="120" rows="30" disabled>
-                          </textarea>
+                          <textarea id="logArea" style="resize: none;" cols="120" rows="30"></textarea>
                         </div>
                       </div>
                   </div>
@@ -32,7 +31,6 @@
 <script type="text/javascript">
 
     $(document).ready(()=> {
-      let logArea = $('#logArea')
       let logMessages = [];
       let status = "<%= buyOrder.buyOrderStatus.label %>";
       let id = "<%= buyOrder.id %>";
@@ -46,30 +44,34 @@
       retrieveOrdersHandle()
 
       function retrieveOrdersHandle(){
-            axios.get(`/buy-orders/api/${id}/logs`).then((response) => {
-              let buyOrder = response.data.buyOrder;
-              let retrievedLogMessages = buyOrder.logMessages;
+        console.log('ran internval');
+        axios.get(`/buy-orders/api/${id}/logs`).then((response) => {
+          let buyOrder = response.data.buyOrder;
+          let retrievedLogMessages = buyOrder.logMessages;
 
-              retrievedLogMessages.forEach(log => {
-                let contains = false;
-                logMessages.foreach(logged => {
-                  if (logged.id == log.id) contains = true;
-                })
+          retrievedLogMessages.forEach(log => {
+            let contained = false
 
-                //Add it to the array
-                if (!contains) {
-                  logMessages.push(log);
-                }
-
-                //Add it to the textarea
-                logArea.value = logArea.value + "\n" + log.content
-              });
-
-              //Check status and cancel interval if necessary
-              if (buyOrder.buyOrderStatus.label == "Failed" || buyOrder.status.label == "Completed") {
-                clearInterval(timer);
-              }
+            //Iteate over added logmessages
+            logMessages.forEach(logged => {
+              if (logged.id == log.id)  contained = true;
             })
+
+            if (!contained) {
+              //Add it to the array
+              logMessages.push(log);
+
+              //Add it to the textarea
+              document.getElementById("logArea").value += log.content + '\n'
+            }
+          });
+
+          //Check status and cancel interval if necessary
+          if (buyOrder.buyOrderStatus.label == "Failed" || buyOrder.buyOrderStatus.label == "Completed") {
+            console.log("cleared timer")
+            clearInterval(timer);
+          }
+        })
       }
 
 
