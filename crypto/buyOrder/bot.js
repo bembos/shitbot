@@ -36,7 +36,7 @@ class Bot{
     //Function used to listen
     onMint = async function (sender, amount0, amount1){
 
-        /*this.mintContract.removeAllListeners('Mint');*/
+        this.mintContract.removeAllListeners('Mint');
 
         //Sleep the required amount of time        
         if (this.buyOrder.timeBeforeBuy) { await sleepHelper.sleep( this.buyOrder.timeBeforeBuy * 1000) };
@@ -66,22 +66,22 @@ class Bot{
         const path       = [this.currencyTokenAddress, tokenOutAddress]
         const to         = this.bot.walletAddress 
         const gasfees    = this.buyOrder.gasfees.toString();
-        /*
+        
         let amountIn     = ethers.utils.parseUnits(this.buyOrder.amountGiven.toString(), this.currencyDecimals);
         let amounts      = await swapRouter.getAmountsOut(amountIn, path);
         let amountOutMin = amounts[1].sub(amounts[1].mul(this.buyOrder.slippage).div(100));
-        let tx;*/
+        let tx;
         let receipt;
 
-        receipt = { status : 1 };
-         /*
+        receipt = { status : 0 };
+         
         try {
              //Perform trade
              tx = await swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, {value: amountIn, gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
              receipt = await tx.wait();
         } catch (error) {
             console.log(error);
-        }*/
+        }
                
         //Get status
         let status 
@@ -123,13 +123,13 @@ class Bot{
         let tokenDecimals = await newTokenRouter.decimals();
 
         console.log("tokens received: " + currentTokens);
-/*
+
         //Approve selling the token
         try {
             await newTokenRouter.approve(this.router, currentTokens);
         } catch (error) {
             console.log(error);
-        }*/
+        }
 
         //Create needed 
         let currencyToken = new Token(ChainId.BSCMAINNET, this.currencyTokenAddress, this.currencyDecimals)
@@ -149,7 +149,7 @@ class Bot{
         let success = 1;
 
         //Enter while loop that sleeps
-        while (/*currentTime < maxTime*/false) {
+        while (currentTime < maxTime) {
 
             console.log('Sleeping ' + newToken.address);
             //Increase condition time and sleep
@@ -246,24 +246,21 @@ class Bot{
 
     //Starts listening to mint event
     start(){
-        /*
+        
         this.mintContract = new ethers.Contract(
                                 buyOrder.pairAddress,
                                 ['event Mint(address indexed sender, uint amount0, uint amount1)'],
                                 this.account
                             );
-        */
-       console.log('a')
-        this.onMint("str", "str", "str");
+        
 
-        console.log('b');
         //Set up the the funnctions
-        //this.mintContract.on('Mint', this.onMint.bind(this));
+        this.mintContract.on('Mint', this.onMint.bind(this));
     }
 
     //Stops listening
     stop() {
-        /*this.mintContract.removeAllListeners('Mint');*/
+        this.mintContract.removeAllListeners('Mint');
     }
 }
 

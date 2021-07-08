@@ -5,24 +5,6 @@ const prisma = new PrismaClient()
 const PancakeSwapManager = require('../crypto/pancakeSwapManager/pancakeSwapManager')
 
 /**
- * Creates a bot for a user
- * @param {User} user 
- */
-exports.createBotForUser = (user) => {
-    return prisma.bot.create({
-        data : {
-            enabled : false,
-            initialAmount : 0.01,
-            autoMultiplier : 2,
-            slippage: 13,
-            maxTransaction : 5,
-            maxTime: 600,
-            userId: user.id
-        }
-    })
-}
-
-/**
  * Updates a bot model
  * @param {Request params} req 
  * @param {Id of bot to update} botId 
