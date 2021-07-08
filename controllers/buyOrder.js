@@ -59,3 +59,21 @@ exports.delete = async (req, res, next) => {
     
     res.redirect('/buy-orders');
 };
+
+exports.logs = async (req, res, next) => {
+  
+    //Retrieve user with code constraints
+    var buyOrder = await buyOrderService.retrieveBuyOrderWithlogs(req.params.buyOrder);
+
+    console.log(buyOrder.logMessages);
+    
+    res.render('buy-orders/logs', {buyOrder: buyOrder, moment: moment, csrfToken: req.csrfToken()});
+};
+
+exports.retrieveLogs = async (req, res, next) => {
+  
+    //Retrieve user with code constraints
+    var buyOrder = await buyOrderService.retrieveBuyOrderWithlogs(req.params.buyOrder);
+
+    res.send({buyOrder: buyOrder});
+};

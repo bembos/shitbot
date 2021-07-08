@@ -47,13 +47,17 @@ router.delete('/constraints/contract-code/delete', auth, codeConstraintControlle
 //Buy Orders
 router.get('/buy-orders/configuration', auth, buyOrderConfigurationController.index);
 router.post('/buy-orders/configuration', auth, buyOrderConfigurationController.configure)
-
 router.get('/buy-orders', auth, buyOrderController.index);
 router.get('/buy-orders/create', auth, buyOrderController.showCreate);
 router.post('/buy-orders/create', auth, buyOrderController.create);
 router.get('/buy-orders/edit/:buyOrder', auth, buyOrderController.showEdit);
 router.put('/buy-orders/edit', auth, buyOrderController.edit);
 router.delete('/buy-orders/delete', auth, buyOrderController.delete);
+router.get('/buy-orders/logs/:buyOrder', auth, buyOrderController.logs);
+
+//Buy Orders - Api
+router.get('/buy-orders/api/:buyOrder/logs', auth, buyOrderController.retrieveLogs);
+
 
 //Trade Window
 router.get('/trade-windows', auth, tradeWindowController.index);

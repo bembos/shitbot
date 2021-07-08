@@ -23,6 +23,23 @@ exports.retrieveUserWithBuyOrdersAndConf = (user) => {
 }
 
 /**
+ * Returns a buy order with its logs
+ * @param {Id} buyOrderId 
+ * @returns 
+ */
+exports.retrieveBuyOrderWithlogs = (buyOrderId) => {
+    return prisma.buyOrder.findUnique({
+        where : {
+            id: parseInt(buyOrderId)
+        },
+        include: {
+            logMessages : true,
+            buyOrderStatus : true
+        }
+    })
+}
+
+/**
  * Find the db entry with the correct id
  * @param {Id} buyOrderId 
  * @returns 

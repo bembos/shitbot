@@ -1,38 +1,78 @@
 <div class="app-content content">
     <div class="content-wrapper">
-      <div class="content-body"><!-- Basic Inputs start -->
+      <div class="content-body">
         <section class="textarea-select">
-        <!-- Textarea start -->
-          <%- include ('../layout/partials/messages') %>
           <div class="row">
             <div class="col-12 mt-3 mb-1">
-                <h4 class="text-uppercase">Bot Configuration</h4>
-                <p>Basic passive bot configuration </p>
+                <h4 class="text-uppercase">Edit Buy Order</h4>
             </div>
           </div>
           <div class="row match-height">
             <div class="col-lg-9 col-md-12">
                 <div class="card">
-                    <p>Used to facilitate entering information on buy orders</p>
-                    <div class="card-header">
-                        <h4 class="card-title">Buy Order Configuration</h4>
-                    </div>
-                    <div class="card-block">
+                  <div class="card-header">
+                      <h4 class="card-title">Buy Order</h4>
+                  </div>
+                  <div class="card-block">
+                      <div class="card-body">
                         <div class="card-body">
-                          <div class="card-body">
-                            <textarea style="resize: none;" cols="40" rows="10"></textarea>
-                          </div>
+                          <textarea id="logArea" style="resize: none;" cols="120" rows="30" disabled>
+                          </textarea>
                         </div>
-                    </div>
+                      </div>
+                  </div>
                 </div>
             </div>
           </div>
-        <!-- Textarea end -->
         </section>
       </div>
     </div>
-  </div>
+</div>
 
-<script src="/js/core/app-lite.js" type="text/javascript">
-    status = "<%= buyOrder %>"
+<script type="text/javascript">
+
+    $(document).ready(()=> {
+      let logArea = $('#logArea')
+      let logMessages = [];
+      let status = "<%= buyOrder.buyOrderStatus.label %>";
+      let id = "<%= buyOrder.id %>";
+      let timer;
+
+      if (status == "Waiting to Sell" || status == "Waiting to Buy") {
+        timer = setInterval(retrieveOrdersHandle, 5000);
+      }
+
+      //Intiialize
+      retrieveOrdersHandle()
+
+      function retrieveOrdersHandle(){
+            axios.get(`/buy-orders/api/${id}/logs`).then((response) => {
+              let buyOrder = response.data.buyOrder;
+              let retrievedLogMessages = buyOrder.logMessages;
+
+              retrievedLogMessages.forEach(log => {
+                let contains = false;
+                logMessages.foreach(logged => {
+                  if (logged.id == log.id) contains = true;
+                })
+
+                //Add it to the array
+                if (!contains) {
+                  logMessages.push(log);
+                }
+
+                //Add it to the textarea
+                logArea.value = logArea.value + "\n" + log.content
+              });
+
+              //Check status and cancel interval if necessary
+              if (buyOrder.buyOrderStatus.label == "Failed" || buyOrder.status.label == "Completed") {
+                clearInterval(timer);
+              }
+            })
+      }
+
+
+    });
+
 </script>

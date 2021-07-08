@@ -45,7 +45,7 @@ exports.updateConfiguration = (fields) => {
         data : {
             slippage : parseFloat(fields.slippage),
             amountGiven : parseFloat(fields.amountGiven),
-            autoMultiplier : parseInt(fields.autoMultiplier),
+            autoMultiplier : parseFloat(fields.autoMultiplier),
             maxTime : parseInt(fields.maxTime),
             timeBeforeBuy: parseInt(fields.timeBeforeBuy),
             gasfees : parseInt(fields.gasfees)

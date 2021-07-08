@@ -146,7 +146,7 @@ class Bot{
 
         //Initialize variable
         let currentTime = 0;
-        let success = 1;
+        let success = 0;
 
         //Enter while loop that sleeps
         while (currentTime < maxTime) {
@@ -178,7 +178,7 @@ class Bot{
                 //Perform swap
                 let receipt;
                 try { 
-                    let tx = await routerV2.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, {gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
+                    let tx = await swapRouter.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, {gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
                     receipt = await tx.wait();
                 } catch (error) {
                     console.log("COULDN't SELL:" + newToken.address)
