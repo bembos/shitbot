@@ -21,8 +21,7 @@ exports.createGeneralContraintsForUser = (user) => {
             maxTokInAddress : 0,
             minNumberOfTxs : 0,
             minNumberOfHolders: 0,
-            userId: user.id,
-            constraintTypeId: 1
+            userId: user.id
         }
     })
 }

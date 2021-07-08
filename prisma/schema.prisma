@@ -139,15 +139,6 @@ model Transaction {
   @@map(name: "transactions")
 }
 
-model ConstraintType {
-  id                           Int                       @id  @default(autoincrement())
-  label                        String                    @unique
-  generalConstraints           GeneralConstraints[]
-  contractCodeConstraints      ContractCodeConstraint[]
-
-  @@map(name: "constraint_types")
-}
-
 model GeneralConstraints {
   id                 Int             @id  @default(autoincrement())
   marketCap          Boolean         @map(name: "market_cap")
@@ -165,8 +156,6 @@ model GeneralConstraints {
   minNumberOfHolders Int?            @map(name: "min_number_of_holders")
   user               User            @relation(fields: [userId], references: [id])
   userId             Int             @map(name: "user_id")
-  constraintType     ConstraintType  @relation(fields: [constraintTypeId], references: [id])
-  constraintTypeId   Int             @map(name: "constraint_type_id")
 
   @@map(name: "general_constraints")
 }
@@ -175,8 +164,6 @@ model ContractCodeConstraint {
   id               Int                        @id  @default(autoincrement())
   label            String                     @unique
   desc             String
-  constraintType   ConstraintType             @relation(fields: [constraintTypeId], references: [id])
-  constraintTypeId Int                        @map(name: "constraint_type_id")
   userConfs        UserContractCodeCons[]
 
   @@map(name: "contract_code_constraints")

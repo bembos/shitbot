@@ -29,8 +29,7 @@ exports.create = (req) => {
             desc: req.body.label,
             sourceCode: req.body.sourceCode,
             avoid: req.body.avoid ? true: false,
-            userId: parseInt(req.body.userId),
-            contractCodeConstraintId: 1
+            userId: parseInt(req.body.userId)
         }
     })
 }

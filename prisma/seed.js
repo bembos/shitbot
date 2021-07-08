@@ -80,27 +80,6 @@ async function main() {
             }
         ]
     })
-
-    //Rules types
-    await prisma.constraintType.create({
-        data: 
-            {
-                label: 'General Constraint'
-            }  
-    })
-
-    await prisma.constraintType.create({
-        data: 
-            {
-                label: 'Contract Code Constraint',
-                contractCodeConstraints: {
-                    create: {
-                        label: 'Source Code Constraints',
-                        desc: 'The user constraints regarding the source code of a token\'s contract'
-                    }
-                }
-            }
-    })
 }
 
 main()
