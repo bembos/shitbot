@@ -10,12 +10,15 @@ const PancakeSwapManager = require('../crypto/pancakeSwapManager/pancakeSwapMana
  * @returns 
  */
 exports.start = async (req) => {
-
+    //Get created status
     status = await prisma.buyOrderStatus.findUnique({
         where: {
             label : "Waiting to Buy"
         }
     })
+
+    //Get blockchain id (temporary)
+    blockchain = await prisma.blockchain.findFirst()
 
     //Creates database row
     buyOrder = await prisma.buyOrder.create({
@@ -27,7 +30,7 @@ exports.start = async (req) => {
             amountGiven:parseFloat(req.body.amountGiven),
             autoMultiplier : parseFloat(req.body.autoMultiplier),
             userId: parseInt(req.body.userId),
-            blockchainId: parseInt(req.body.blockchainId),
+            blockchainId: parseInt(blockchain.id),
             buyOrderStatusId: parseInt(status.id),
             maxTime: parseInt(req.body.maxTime),
             timeBeforeBuy: parseInt(req.body.timeBeforeBuy),
