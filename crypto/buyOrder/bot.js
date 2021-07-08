@@ -4,6 +4,7 @@ const { Token } = require('@uniswap/sdk');
 
 //Services
 const buyOrderService = require('../../services/buyOrder');
+const buyOrderStatusService = require('../../services/buyOrderStatus');
 
 //Utilities
 const sleepHelper = require('../utilities/sleep');
@@ -35,7 +36,7 @@ class Bot{
     //Function used to listen
     onMint = async function (sender, amount0, amount1){
 
-        this.mintContract.removeAllListeners('Mint');
+        /*this.mintContract.removeAllListeners('Mint');*/
 
         //Sleep the required amount of time        
         if (this.buyOrder.timeBeforeBuy) { await sleepHelper.sleep( this.buyOrder.timeBeforeBuy * 1000) };
@@ -65,25 +66,37 @@ class Bot{
         const path       = [this.currencyTokenAddress, tokenOutAddress]
         const to         = this.bot.walletAddress 
         const gasfees    = this.buyOrder.gasfees.toString();
-        
+        /*
         let amountIn     = ethers.utils.parseUnits(this.buyOrder.amountGiven.toString(), this.currencyDecimals);
         let amounts      = await swapRouter.getAmountsOut(amountIn, path);
         let amountOutMin = amounts[1].sub(amounts[1].mul(this.buyOrder.slippage).div(100));
-        let tx;
+        let tx;*/
         let receipt;
 
-        receipt = { status : 0 };
-         
+        receipt = { status : 1 };
+         /*
         try {
              //Perform trade
              tx = await swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, {value: amountIn, gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
              receipt = await tx.wait();
         } catch (error) {
             console.log(error);
-        }
+        }*/
                
         //Get status
-        const status = receipt.status == 0 ? 3 : 2;
+        let status 
+
+        if (receipt.status == 0) {
+            status = await buyOrderStatusService.find("Failed");
+        }
+        else if (this.buyOrder.autoMultiplier == 0){
+            status = await buyOrderStatusService.find("Completed");
+        }
+        else {
+            status = await buyOrderStatusService.find("Waiting to Sell");
+        }
+
+        console.log(status.label);
 
         //Update buy order
         await buyOrderService.update({
@@ -94,16 +107,13 @@ class Bot{
             amountGiven: this.buyOrder.amountGiven,
             autoMultiplier : this.buyOrder.autoMultiplier,
             maxTime: this.buyOrder.maxTime,
-            buyOrderStatusId: status,
+            buyOrderStatusId: status.id,
             timeBeforeBuy: this.buyOrder.timeBeforeBuy,
             gasfees : this.buyOrder.gasfees
         })
 
-        console.log(this.buyOrder.gasfees);
-        console.log(this.buyOrder.timeBeforeBuy)
-
         //If there is no auto multiplier return
-        if (this.buyOrder.autoMultiplier == 0 || status == 3) { 
+        if (this.buyOrder.autoMultiplier == 0 || status.label == "Failed") { 
             this.events.emit('finished');
             return; 
         } 
@@ -113,13 +123,13 @@ class Bot{
         let tokenDecimals = await newTokenRouter.decimals();
 
         console.log("tokens received: " + currentTokens);
-
+/*
         //Approve selling the token
         try {
             await newTokenRouter.approve(this.router, currentTokens);
         } catch (error) {
             console.log(error);
-        }
+        }*/
 
         //Create needed 
         let currencyToken = new Token(ChainId.BSCMAINNET, this.currencyTokenAddress, this.currencyDecimals)
@@ -136,10 +146,10 @@ class Bot{
 
         //Initialize variable
         let currentTime = 0;
-        let status = 3;
+        let success = 1;
 
         //Enter while loop that sleeps
-        while (currentTime < maxTime) {
+        while (/*currentTime < maxTime*/false) {
 
             console.log('Sleeping ' + newToken.address);
             //Increase condition time and sleep
@@ -174,7 +184,7 @@ class Bot{
                     console.log("COULDN't SELL:" + newToken.address)
                     console.log(error);
                     currentTime = maxTime;
-                    status = 3;
+                    sucesss = 0;
                 }
 
                 console.log('-------------------------------------------------------')
@@ -183,13 +193,12 @@ class Bot{
  
                 //Break loop
                 currentTime = maxTime;
-                status = 2;
+                success = 1;
             }
         }
 
         //If transaction failed create failed status entities
-        
-        if (status == 3) {
+        if (!success) {
 
             //Try one last time to sell
             let amountIn = currentTokens;
@@ -207,6 +216,14 @@ class Bot{
             }
         }
 
+        let status;
+
+        if (success) {
+            status = await buyOrderStatusService.find("Completed"); 
+        } else{
+            status = await buyOrderStatusService.find("Failed"); 
+        }
+
         //Update buy order
         await buyOrderService.update({
             buyOrder : this.buyOrder.id,
@@ -216,7 +233,7 @@ class Bot{
             amountGiven: this.buyOrder.amountGiven,
             autoMultiplier : this.buyOrder.autoMultiplier,
             maxTime: this.buyOrder.maxTime,
-            buyOrderStatusId: status,
+            buyOrderStatusId: status.id,
             timeBeforeBuy: this.buyOrder.timeBeforeBuy,
             gasfees : this.buyOrder.gasfees
         })
@@ -229,19 +246,24 @@ class Bot{
 
     //Starts listening to mint event
     start(){
+        /*
         this.mintContract = new ethers.Contract(
                                 buyOrder.pairAddress,
                                 ['event Mint(address indexed sender, uint amount0, uint amount1)'],
                                 this.account
                             );
+        */
+       console.log('a')
+        this.onMint("str", "str", "str");
 
+        console.log('b');
         //Set up the the funnctions
-        this.mintContract.on('Mint', this.onMint.bind(this));
+        //this.mintContract.on('Mint', this.onMint.bind(this));
     }
 
     //Stops listening
     stop() {
-        this.mintContract.removeAllListeners('Mint');
+        /*this.mintContract.removeAllListeners('Mint');*/
     }
 }
 

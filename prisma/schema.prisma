@@ -31,7 +31,7 @@ model Blockchain {
 
 model BuyOrderStatus {
   id        Int         @id @default(autoincrement())
-  label     String
+  label     String      @unique
   buyOrders BuyOrder[]
 
   @@map(name: "buy_order_statuses")
@@ -52,24 +52,25 @@ model BuyOrderConfiguration {
 }
 
 model BuyOrder {
-  id                Int             @id @default(autoincrement())
+  id                Int                   @id @default(autoincrement())
   label             String?
   address           String
-  pairAddress       String          @map(name: "pair_address")
+  pairAddress       String                @map(name: "pair_address")
   slippage          Int
-  amountGiven       Float           @map(name: "amount_given")
-  autoMultiplier    Float?          @map(name: "auto_multiplier")
-  maxTime           Int             @map(name: "max_time")
-  gasfees           Int             @map(name: "gas_fees")
-  timeBeforeBuy     Int             @map(name: "time_before_buy")
-  createdAt         DateTime        @default(now()) @map(name: "created_at")
-  completedAt       DateTime?       @map(name: "completed_at")
-  user              User            @relation(fields: [userId], references: [id])
-  userId            Int             @map(name: "user_id")
-  blockchain        Blockchain      @relation(fields: [blockchainId], references: [id])
-  blockchainId      Int             @map(name: "blockchain_id")
-  buyOrderStatus    BuyOrderStatus  @relation(fields: [buyOrderStatusId], references: [id])
-  buyOrderStatusId  Int             @map(name: "buy_order_status_id")
+  amountGiven       Float                 @map(name: "amount_given")
+  autoMultiplier    Float?                @map(name: "auto_multiplier")
+  maxTime           Int                   @map(name: "max_time")
+  gasfees           Int                   @map(name: "gas_fees")
+  timeBeforeBuy     Int                   @map(name: "time_before_buy")
+  createdAt         DateTime              @default(now()) @map(name: "created_at")
+  completedAt       DateTime?             @map(name: "completed_at")
+  user              User                  @relation(fields: [userId], references: [id])
+  userId            Int                   @map(name: "user_id")
+  blockchain        Blockchain            @relation(fields: [blockchainId], references: [id])
+  blockchainId      Int                   @map(name: "blockchain_id")
+  buyOrderStatus    BuyOrderStatus        @relation(fields: [buyOrderStatusId], references: [id])
+  buyOrderStatusId  Int                   @map(name: "buy_order_status_id")
+  logMessages       BuyOrderLogMessage[]
 
   @@map(name: "buy_orders")
 }
@@ -113,6 +114,16 @@ model TransactionStatus {
   transactions Transaction[]
 
   @@map(name: "transaction_statuses")
+}
+
+model BuyOrderLogMessage {
+  id            Int         @id @default(autoincrement())
+  content       String      @db.MediumText
+  createdAt     DateTime    @default(now()) @map(name: "created_at")
+  buyOrder      BuyOrder    @relation(fields: [buyOrderId], references: [id]) 
+  buyOrderId    Int         @map(name: "buy_order_id")
+
+  @@map(name: "buy_order_log_messages")
 }
 
 model LogMessage {
