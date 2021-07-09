@@ -166,7 +166,7 @@ class Bot{
         while (currentTime < maxTime) {
 
             //Increase condition time and sleep
-            currentTime = currentTime + 5;
+            currentTime = currentTime + 3;
             await sleepHelper.sleep(3000);
             
             let amounts      = await swapRouter.getAmountsOut(currentTokens, [newToken.address, currencyToken.address]);
