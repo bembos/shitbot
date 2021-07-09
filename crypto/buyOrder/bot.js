@@ -169,10 +169,9 @@ class Bot{
                 let amountOutMin = amounts[1].sub(amounts[1].mul(this.buyOrder.slippage).div(100));
 
                 //Perform swap
-                let receipt;
                 try { 
                     let tx = await swapRouter.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, {gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
-                    receipt = await tx.wait();
+                    await tx.wait();
                 } catch (error) {
                     await buyOrderLogMessageService.create({
                         content: "Error: " + error,
@@ -204,10 +203,9 @@ class Bot{
             let amountOutMin = amounts[1].sub(amounts[1].mul(this.bot.slippage).div(100));
 
             //Perform swap
-            let receipt;
             try { 
                 let tx = await swapRouter.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, {gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
-                receipt = await tx.wait();
+                await tx.wait();
             } catch (error) {
                 await buyOrderLogMessageService.create({
                         content: "Couldn't sell in last effort: Error " + error,
