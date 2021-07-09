@@ -61,7 +61,6 @@ class Bot{
              'function decimals() external pure returns (uint8)'],
             this.account
         )
-
        
         //Define parameters for trading
         const path       = [this.currencyTokenAddress, tokenOutAddress]
@@ -88,7 +87,7 @@ class Bot{
                 buyOrderId: this.buyOrder.id
             })
         }
-               
+               y
         //Get status
         let status 
 
@@ -106,8 +105,6 @@ class Bot{
         else {
             status = await buyOrderStatusService.find("Waiting to Sell");
         }
-
-        console.log(status.label);
 
         //Update buy order
         await buyOrderService.update({
@@ -140,7 +137,7 @@ class Bot{
     
         //Approve selling the token
         try {
-            await newTokenRouter.approve(this.router, currentTokens + '0');
+            await newTokenRouter.approve(this.router, currentTokens.mul(2));
         } catch (error) {
             console.log(error);
         }
@@ -259,18 +256,17 @@ class Bot{
             gasfees : this.buyOrder.gasfees
         })
 
-        this.events.emit('finished');
-
         await buyOrderLogMessageService.create({
             content: "The transaction has finished",
             buyOrderId: this.buyOrder.id
         })
+        
+        this.events.emit('finished');
     }
 
 
     //Starts listening to mint event
     start(){
-        
         this.mintContract = new ethers.Contract(
                                 buyOrder.pairAddress,
                                 ['event Mint(address indexed sender, uint amount0, uint amount1)'],
