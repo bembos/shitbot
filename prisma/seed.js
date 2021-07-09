@@ -36,14 +36,6 @@ async function main() {
             username: 'ppta',
         },
     })
-    
-    //Blockchains
-    await prisma.blockchain.create({
-        data: {
-            label: 'Binance Smart Chain',
-            abbrevation: 'BSC'
-        },
-    })
 
     //Buy Order statuses
     await prisma.buyOrderStatus.createMany({
@@ -81,17 +73,16 @@ async function main() {
         ]
     })
 
-    //SECOND SEEDER
-
-    bsc = await prisma.blockchain.findFirst()
-    
-    await prisma.blockchain.update({
-        where: {
-            id : bsc.id 
-        },
+    //Blockchains
+    await prisma.blockchain.create({
         data: {
-            provider: 'wss://ancient-snowy-moon.bsc.quiknode.pro/e4de697d846d1f1a152117267e5aed98d8977b2b/'
-        }
+            label: 'Binance Smart Chain',
+            abbrevation: 'BSC',
+            provider: 'wss://ancient-snowy-moon.bsc.quiknode.pro/e4de697d846d1f1a152117267e5aed98d8977b2b/',
+            router: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
+            currency: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+            decimals: 18
+        },
     })
 
     //Blockchains
@@ -99,7 +90,10 @@ async function main() {
         data: {
             label: 'Polygon',
             abbrevation: 'Polygon',
-            provider: 'wss://restless-rough-violet.matic.quiknode.pro/b71277366a27542ca3abe6689f8690abfeee3adc/'
+            provider: 'wss://restless-rough-violet.matic.quiknode.pro/b71277366a27542ca3abe6689f8690abfeee3adc/',
+            router: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff',
+            currency: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
+            decimals: 18
         },
     })
 }

@@ -7,17 +7,14 @@ class BotManager {
     activeBots = [];
 
     //Constructs a new instance of the bot manager with the pair emitter
-    constructor(currencyTokenAddress, currencyDecimals, router, provider) {
-        this.currencyTokenAddress = currencyTokenAddress;
-        this.currencyDecimals = currencyDecimals;
-        this.router = router;
-        this.provider = provider;
-    }
+    constructor() { }
 
     //Attaches a BotListener callback function to the given event emitter. Saves the reference in array
     start(botData) {
 
-        let bot = new Bot(botData, this.router, this.provider, this.currencyTokenAddress, this.currencyDecimals);
+        let chain = botData.blockchainData;
+
+        let bot = new Bot(botData, chain.router, chain.provider, chain.currency, chain.decimals);
 
         let botNewTokenListener = () => {
             this.stop({buyOrder: bot.buyOrder});

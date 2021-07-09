@@ -44,24 +44,6 @@ class Bot{
 
         let tokenOutAddress = this.buyOrder.address;
 
-        //Set up routers
-        const swapRouter = new ethers.Contract(
-            this.router,
-            ['function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)',
-             'function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)',
-             'function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)'],
-            this.account
-          );
-
-        //Create router to sell
-        const newTokenRouter = new ethers.Contract(
-            tokenOutAddress,
-            ['function balanceOf(address account) public view returns (uint256)',
-             'function approve(address _spender, uint256 _value) public returns (bool success)',
-             'function decimals() external pure returns (uint8)'],
-            this.account
-        )
-       
         //Define parameters for trading
         const path       = [this.currencyTokenAddress, tokenOutAddress]
         const to         = this.bot.walletAddress 
@@ -77,7 +59,7 @@ class Bot{
          
         try {
              //Perform trade
-             tx      = await swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, {value: amountIn, gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
+             tx      = await this.swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, {value: amountIn, gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
              receipt = await tx.wait();
         } catch (error) {
             console.log(error);
@@ -127,8 +109,8 @@ class Bot{
         } 
 
         //Retrieve current tokens and format
-        let currentTokens = await newTokenRouter.balanceOf(this.bot.walletAddress);
-        let tokenDecimals = await newTokenRouter.decimals();
+        let currentTokens = await this.newTokenRouter.balanceOf(this.bot.walletAddress);
+        let tokenDecimals = await this.newTokenRouter.decimals();
 
         await buyOrderLogMessageService.create({
                 content: "Bought " + currentTokens,
@@ -137,7 +119,7 @@ class Bot{
     
         //Approve selling the token
         try {
-            await newTokenRouter.approve(this.router, currentTokens.mul(2));
+            await this.newTokenRouter.approve(this.router, currentTokens.mul(2));
         } catch (error) {
             console.log(error);
         }
@@ -147,7 +129,7 @@ class Bot{
         let newToken      = new Token(ChainId.BSCMAINNET, this.buyOrder.address, tokenDecimals)
 
         //Start sell swap
-        this.asyncSellSwap(currencyToken, newToken, currentTokens, swapRouter, this.buyOrder.maxTime, this.buyOrder.autoMultiplier, this.buyOrder.amountGiven, gasfees);
+        this.asyncSellSwap(currencyToken, newToken, currentTokens, this.swapRouter, this.buyOrder.maxTime, this.buyOrder.autoMultiplier, this.buyOrder.amountGiven, gasfees);
     }
 
     //Async function which will try to sell every couple of seconds
@@ -273,6 +255,24 @@ class Bot{
                                 this.account
                             );
 
+        //Set up routers
+        this.swapRouter = new ethers.Contract(
+            this.router,
+            ['function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)',
+                'function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)',
+                'function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)'],
+            this.account
+            );
+
+        //Create router to sell
+        this.newTokenRouter = new ethers.Contract(
+            buyOrder.address,
+            ['function balanceOf(address account) public view returns (uint256)',
+                'function approve(address _spender, uint256 _value) public returns (bool success)',
+                'function decimals() external pure returns (uint8)'],
+            this.account
+        )
+        
         //Set up the the funnctions
         this.mintContract.on('Mint', this.onMint.bind(this));
     }

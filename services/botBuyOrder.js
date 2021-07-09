@@ -18,7 +18,12 @@ exports.start = async (req) => {
     })
 
     //Get blockchain id (temporary)
-    blockchain = await prisma.blockchain.findFirst()
+    blockchain = await prisma.blockchain.findUnique({
+        where: {
+            id: parseInt(req.body.blockchainId)
+        }
+    })
+    console.log(blockchain.label);
 
     //Creates database row
     buyOrder = await prisma.buyOrder.create({
@@ -59,7 +64,8 @@ exports.start = async (req) => {
     manager.start({ 
         buyOrder : buyOrder,
         user : buyOrder.user,
-        bot : buyOrder.user.bot
+        bot : buyOrder.user.bot,
+        blockchainData : blockchain
     });
 
     return buyOrder;

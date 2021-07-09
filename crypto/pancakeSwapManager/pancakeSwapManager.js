@@ -29,7 +29,7 @@ class PancakeSwapIntegration {
         this.newPairListener = new NewPairListener(currencyTokenAddress, stableTokenAddress, factoryAddress, provider, burnAddress, walletToPowerTrades, router)
 
         this.passiveBotManager = new PassiveBotManager(this.newPairListener, router, provider);
-        this.buyOrderBotManager = new BuyOrderBotManager(currencyTokenAddress, currencyDecimals, router, provider);
+        this.buyOrderBotManager = new BuyOrderBotManager();
     }
 }
 
