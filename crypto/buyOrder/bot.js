@@ -87,7 +87,7 @@ class Bot{
                 buyOrderId: this.buyOrder.id
             })
         }
-               y
+               
         //Get status
         let status 
 

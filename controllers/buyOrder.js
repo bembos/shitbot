@@ -1,5 +1,6 @@
 //Code constraint Service handler
 const buyOrderService = require('../services/buyOrder');
+const blockchainService = require('../services/blockchain');
 const botBuyOrderService = require('../services/botBuyOrder');
 const buyOrderConfigurationService = require('../services/buyOrderConfiguration');
 
@@ -25,8 +26,10 @@ exports.showCreate = async (req, res, next) => {
   
     //Retrieve user with code constraints
     var user = await buyOrderConfigurationService.retrieveWithConfiguration(req.user);
+
+    var blockchains = await blockchainService.all();
     
-    res.render('buy-orders/create', {configuration: user.buyOrderConfiguration, user: user, csrfToken: req.csrfToken()});
+    res.render('buy-orders/create', {configuration: user.buyOrderConfiguration, user: user, blockchains: blockchains, csrfToken: req.csrfToken()});
 };
 
 exports.create = async (req, res, next) => {
@@ -64,8 +67,6 @@ exports.logs = async (req, res, next) => {
   
     //Retrieve user with code constraints
     var buyOrder = await buyOrderService.retrieveBuyOrderWithlogs(req.params.buyOrder);
-
-    console.log(buyOrder.logMessages);
     
     res.render('buy-orders/logs', {buyOrder: buyOrder, moment: moment, csrfToken: req.csrfToken()});
 };

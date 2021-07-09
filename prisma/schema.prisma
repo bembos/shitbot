@@ -23,6 +23,7 @@ model Blockchain {
   id          Int        @id @default(autoincrement())
   label       String  
   abbrevation String
+  provider    String?
   buyOrders   BuyOrder[]
   bots        Bot[]
 

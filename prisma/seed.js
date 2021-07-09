@@ -80,6 +80,28 @@ async function main() {
             }
         ]
     })
+
+    //SECOND SEEDER
+
+    bsc = await prisma.blockchain.findFirst()
+    
+    await prisma.blockchain.update({
+        where: {
+            id : bsc.id 
+        },
+        data: {
+            provider: 'wss://ancient-snowy-moon.bsc.quiknode.pro/e4de697d846d1f1a152117267e5aed98d8977b2b/'
+        }
+    })
+
+    //Blockchains
+    await prisma.blockchain.create({
+        data: {
+            label: 'Polygon',
+            abbrevation: 'Polygon',
+            provider: 'wss://restless-rough-violet.matic.quiknode.pro/b71277366a27542ca3abe6689f8690abfeee3adc/'
+        },
+    })
 }
 
 main()

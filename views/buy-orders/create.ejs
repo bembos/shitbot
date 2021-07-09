@@ -22,7 +22,16 @@
                             <input type="hidden" name="buyOrderStatusId" value="1">
                             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
-                            <h5 class="mt-2">Label</h5>
+                              <h5 class="mt-2">Blockchains</h5>
+                              <fieldset class="form-group">
+                                <select class="form-group" name="blockchainId">
+                                  <% for(let blockchain of blockchains) { %>
+                                    <option value="<%= blockchain.id%>"><%= blockchain.abbrevation%></option>
+                                  <% } %>
+                                </select>
+                              </fieldset>
+                              
+                              <h5 class="mt-2">Label</h5>
                               <fieldset class="form-group">
                                 <input type="text" class="form-control" name="label">
                               </fieldset>
