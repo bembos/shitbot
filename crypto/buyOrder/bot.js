@@ -50,7 +50,7 @@ class Bot{
         const gasfees    = this.buyOrder.gasfees.toString();
         
         let amountIn     = ethers.utils.parseUnits(this.buyOrder.amountGiven.toString(), this.currencyDecimals);
-        let amounts      = await swapRouter.getAmountsOut(amountIn, path);
+        let amounts      = await this.swapRouter.getAmountsOut(amountIn, path);
         let amountOutMin = amounts[1].sub(amounts[1].mul(this.buyOrder.slippage).div(100));
         let tx;
         let receipt;
