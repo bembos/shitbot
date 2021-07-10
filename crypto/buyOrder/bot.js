@@ -59,7 +59,7 @@ class Bot{
          
         try {
              //Perform trade
-             tx      = await this.swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, {value: amountIn, gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
+             tx      = await this.swapRouter.swapExactETHForTokens(amountOutMin, path, to, Date.now() + 1000 * 60 * 10, {value: amountIn, gasLimit: '1300000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
              receipt = await tx.wait();
         } catch (error) {
             console.log(error);
@@ -170,7 +170,7 @@ class Bot{
 
                 //Perform swap
                 try { 
-                    let tx = await swapRouter.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, {gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
+                    let tx = await swapRouter.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, {gasLimit: '1300000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
                     await tx.wait();
                 } catch (error) {
                     await buyOrderLogMessageService.create({
@@ -204,7 +204,7 @@ class Bot{
 
             //Perform swap
             try { 
-                let tx = await swapRouter.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, {gasLimit: '800000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
+                let tx = await swapRouter.swapExactTokensForETH(amountIn,  amountOutMin, [newToken.address, currencyToken.address], this.bot.walletAddress , Date.now() + 1000 * 60 * 10, {gasLimit: '1300000', gasPrice: ethers.utils.parseUnits(gasfees, 'gwei')})
                 await tx.wait();
             } catch (error) {
                 await buyOrderLogMessageService.create({
